@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.1.3"
+VERSION="0.1.4"
 
 # Set up defaults.
 DB="paritydb"
@@ -135,6 +135,14 @@ case "$1" in
 		wget -q https://github.com/paritytech/polkadot/releases/latest/download/polkadot
 		chmod +x $POLKADOT
 		$0 restart
+		;;
+	update-self)
+		if [[ -e polkadot.sh ]]; then
+			mv polkadot.sh polkadot.sh.old || exit
+		}
+		wget -q https://raw.githubusercontent.com/gavofyork/scripts/master/polkadot.sh
+		chmod +x polkadot.sh
+		sudo mv polkadot.sh $0
 		;;
 	init-sentry)
 		if [ $# -lt 4 ]; then
