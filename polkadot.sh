@@ -139,7 +139,7 @@ case "$1" in
 	update-self)
 		if [[ -e polkadot.sh ]]; then
 			mv polkadot.sh polkadot.sh.old || exit
-		}
+		fi
 		wget -q https://raw.githubusercontent.com/gavofyork/scripts/master/polkadot.sh
 		chmod +x polkadot.sh
 		sudo mv polkadot.sh $0
