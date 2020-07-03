@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.1.5"
+VERSION="0.1.6"
 
 # Set up defaults.
 DB="paritydb"
