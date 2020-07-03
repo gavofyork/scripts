@@ -16,7 +16,7 @@ EXE=polkadot
 
 # Bring in user config.
 if [[ "$1" != "init-sentry" && "$1" != "init-validator" ]]; then
-	source ~/polkadot.config
+	source ./polkadot.config
 fi
 
 POLKADOT=$BASE/$EXE
