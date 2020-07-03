@@ -28,11 +28,6 @@ POLKADOT=$BASE/$EXE
 [[ $IN_PEERS ]] && OPTIONS="$OPTIONS --in-peers=$IN_PEERS"
 [[ $OUT_PEERS ]] && OPTIONS="$OPTIONS --out-peers=$OUT_PEERS"
 [[ "$PRUNING" != "" ]] && OPTIONS="$OPTIONS --unsafe-pruning --pruning=$PRUNING"
-if [[ "$INSTANCES" == "1" ]]; then
-	FULLNAME="$NAME"
-else
-	FULLNAME="$NAME-$INSTANCE"
-fi
 
 trim() {
     local var="$*"
@@ -48,6 +43,12 @@ case "$1" in
 			exit
 		fi
 		INSTANCE=$2
+
+		if [[ "$INSTANCES" == "1" ]]; then
+			FULLNAME="$NAME"
+		else
+			FULLNAME="$NAME-$INSTANCE"
+		fi
 
 		CUT=$(which gcut || which cut)
 		OTHER_HOSTS="$(for i in $HOSTS; do if [[ $i != $HOST ]]; then echo -n $i ''; fi; done)"
