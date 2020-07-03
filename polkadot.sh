@@ -140,7 +140,7 @@ case "$1" in
 			echo "/ip4/$IP/tcp/$((30333 + i))/p2p/$MULTIADDR"
 		done
 		;;
-	key)
+	key | keys)
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
 			curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:$((9933 + i)) | cut -d '"' -f 8
 		done
