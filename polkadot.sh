@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.1.4"
+VERSION="0.1.5"
 
 # Set up defaults.
 DB="paritydb"
@@ -57,13 +57,14 @@ case "$1" in
 		else
 			LOCAL_NODES=""
 		fi
-		if [[ "$VALIDATORS" == "" ]]; then
-			S="$SENTRIES" || "sentries"
-			SENTRY_NODE="$($CUT -d ' ' -f $((INSTANCE + OFFSET)) < "$BASE/nodes/$S")"
+		if [[ "$SENTRIES" != "" ]]; then
+			SENTRY_NODE="$($CUT -d ' ' -f $((INSTANCE + OFFSET)) < "$BASE/nodes/addrs.$SENTRIES")"
 			MODE="--validator"
-		else
+		elif [[ "$VALIDATORS" != "" ]]; then
 			VALIDATOR_NODE="$($CUT -d ' ' -f $((INSTANCE + OFFSET)) < "$BASE/nodes/addrs.$VALIDATORS")"
 			MODE="--sentry $VALIDATOR_NODE"
+		else
+			MODE=""
 		fi
 
 		REMOTE_NODES="$(for i in $OTHER_HOSTS; do cat $BASE/nodes/addrs.$i; done)"
@@ -74,10 +75,12 @@ case "$1" in
 		echo "OTHER_HOSTS: $OTHER_HOSTS"
 		echo "LOCAL_NODES: $LOCAL_NODES"
 		echo "REMOTE_NODES: $REMOTE_NODES"
-		if [[ "$VALIDATORS" == "" ]]; then
+		if [[ "$SENTRIES" != "" ]]; then
 			echo "SENTRY_NODE: $SENTRY_NODE"
-		else
+		elif [[ "$VALIDATORS" != "" ]]; then
 			echo "VALIDATOR_NODE: $VALIDATOR_NODE"
+		else
+			echo "(FULL NODE)"
 		fi
 
 		if [[ ! -e $BASE/nodes/instance-$INSTANCE ]]; then
