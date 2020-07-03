@@ -58,10 +58,10 @@ case "$1" in
 			LOCAL_NODES=""
 		fi
 		if [[ "$SENTRIES" != "" ]]; then
-			SENTRY_NODE="$($CUT -d ' ' -f $((INSTANCE + OFFSET)) < "$BASE/nodes/addrs.$SENTRIES")"
+			SENTRY_NODE="$(echo $(cat "$BASE/nodes/addrs.$SENTRIES") | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
 			MODE="--validator"
 		elif [[ "$VALIDATORS" != "" ]]; then
-			VALIDATOR_NODE="$($CUT -d ' ' -f $((INSTANCE + OFFSET)) < "$BASE/nodes/addrs.$VALIDATORS")"
+			VALIDATOR_NODE="$(echo $(cat "$BASE/nodes/addrs.$VALIDATORS") | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
 			MODE="--sentry $VALIDATOR_NODE"
 		else
 			MODE=""
