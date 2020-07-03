@@ -135,9 +135,9 @@ case "$1" in
 		;;
 	address)
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
-			MULTIADDR=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9932 + i)) | cut -d '"' -f 8)
+			MULTIADDR=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 + i)) | cut -d '"' -f 8)
 			IP=$(hostname -I | cut -f 1 -d ' ')
-			echo "/ip4/$IP/tcp/$((30332 + i))/p2p/$MULTIADDR"
+			echo "/ip4/$IP/tcp/$((30333 + i))/p2p/$MULTIADDR"
 		done
 		;;
 	update)
