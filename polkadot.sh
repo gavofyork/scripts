@@ -111,18 +111,19 @@ case "$1" in
 		done
 		;;	
 	start | "")
-		$0 stop
-		[[ -x $POLKADOT ]] || $0 update
+		[[ -x $POLKADOT ]] && $0 stop || $0 update
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
 			echo "Starting instance $((i + 1)) of $INSTANCES..."
 			screen -d -m $0 loop $((i + 1))
 		done
 		;;
 	stop)
-		chmod -x $POLKADOT
-		pkill -x $EXE 2> /dev/null
-		sleep 1
-		chmod +x $POLKADOT
+		if [[ -x $POLKADOT ]]; then
+			chmod -x $POLKADOT
+			pkill -x $EXE 2> /dev/null
+			sleep 1
+			chmod +x $POLKADOT
+		fi
 		;;
 	restart)
 		echo "Restarting..."
