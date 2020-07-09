@@ -3,7 +3,17 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.1.7"
+VERSION="0.2.0"
+
+count() {
+	printf $#
+}
+trim() {
+    local var="$*"
+    var="${var#"${var%%[![:space:]]*}"}"
+    var="${var%"${var##*[![:space:]]}"}"   
+    printf '%s' "$var"
+}
 
 # Set up defaults.
 DB="paritydb"
@@ -13,12 +23,14 @@ IN_PEERS=25
 OUT_PEERS=25
 RESERVED_ONLY=1
 EXE=polkadot
+BASE=/home/polkadot
 
 # Bring in user config.
 if [[ "$1" != "init-sentry" && "$1" != "init-validator" ]]; then
 	source ./polkadot.config
 fi
 
+INSTANCES=$INSTANCES || `count($HOST_NODES)`
 POLKADOT=$BASE/$EXE
 
 # Integrate config into final options.
@@ -28,13 +40,6 @@ POLKADOT=$BASE/$EXE
 [[ $IN_PEERS ]] && OPTIONS="$OPTIONS --in-peers=$IN_PEERS"
 [[ $OUT_PEERS ]] && OPTIONS="$OPTIONS --out-peers=$OUT_PEERS"
 [[ "$PRUNING" != "" ]] && OPTIONS="$OPTIONS --unsafe-pruning --pruning=$PRUNING"
-
-trim() {
-    local var="$*"
-    var="${var#"${var%%[![:space:]]*}"}"
-    var="${var%"${var##*[![:space:]]}"}"   
-    printf '%s' "$var"
-}
 
 case "$1" in 
 	run)
@@ -51,30 +56,25 @@ case "$1" in
 		fi
 
 		CUT=$(which gcut || which cut)
-		OTHER_HOSTS="$(for i in $HOSTS; do if [[ $i != $HOST ]]; then echo -n $i ''; fi; done)"
-		if [[ -e $BASE/nodes/addrs.$HOST ]]; then
-			LOCAL_NODES="$($CUT --complement -d ' ' -f $INSTANCE < $BASE/nodes/addrs.$HOST)"
-		else
-			LOCAL_NODES=""
+		if [[ "$HOST_NODES" != "" ]]; then
+			LOCAL_NODES="$(echo $HOST_NODES | $CUT --complement -d ' ' -f $INSTANCE)"
 		fi
 		if [[ "$SENTRIES" != "" ]]; then
-			SENTRY_NODE="$(echo $(cat "$BASE/nodes/addrs.$SENTRIES") | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
+			SENTRY_NODE="$(echo $SENTRIES | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
 			MODE="--validator"
 		elif [[ "$VALIDATORS" != "" ]]; then
-			VALIDATOR_NODE="$(echo $(cat "$BASE/nodes/addrs.$VALIDATORS") | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
+			VALIDATOR_NODE="$(echo $VALIDATORS | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
 			MODE="--sentry $VALIDATOR_NODE"
 		else
 			MODE=""
 		fi
-
-		REMOTE_NODES="$(for i in $OTHER_HOSTS; do cat $BASE/nodes/addrs.$i; done)"
 
 		echo "$HOST: $FULLNAME"
 		echo "MODE: $MODE"
 		echo "OPTIONS: $OPTIONS"
 		echo "OTHER_HOSTS: $OTHER_HOSTS"
 		echo "LOCAL_NODES: $LOCAL_NODES"
-		echo "REMOTE_NODES: $REMOTE_NODES"
+		echo "RESERVED: $RESERVED"
 		if [[ "$SENTRIES" != "" ]]; then
 			echo "SENTRY_NODE: $SENTRY_NODE"
 		elif [[ "$VALIDATORS" != "" ]]; then
@@ -91,8 +91,8 @@ case "$1" in
 			fi
 		fi
 
-		if [[ "$LOCAL_NODES$REMOTE_NODES$SENTRY_NODE" != "" ]]; then
-			RESERVED_NODES="--reserved-nodes $LOCAL_NODES $REMOTE_NODES $SENTRY_NODE"
+		if [[ "$LOCAL_NODES$RESERVED$SENTRY_NODE" != "" ]]; then
+			RESERVED_NODES="--reserved-nodes $LOCAL_NODES $RESERVED $SENTRY_NODE"
 		fi
 
 		DB_PATH="$BASE/nodes/instance-$INSTANCE"
@@ -153,12 +153,17 @@ case "$1" in
 		$0 restart
 		;;
 	update-self)
-		if [[ -e polkadot.sh ]]; then
-			mv polkadot.sh polkadot.sh.old || exit
-		fi
 		wget -q https://raw.githubusercontent.com/gavofyork/scripts/master/polkadot.sh
 		chmod +x polkadot.sh
 		sudo mv polkadot.sh $0
+		;;
+	pack-db)
+		$0 stop
+		cd ~polkadot/nodes/
+		mv instance-1/chains/polkadot/network/secret_ed25519 .
+		tar czf db.tgz instance-1
+		mv secret_ed25519 instance-1/chains/polkadot/network
+		$1 start
 		;;
 	init-sentry)
 		if [ $# -lt 4 ]; then
@@ -171,18 +176,19 @@ case "$1" in
 NAME="$2"
 INSTANCES=$3
 VALIDATORS="$4"
-BASE=$(pwd)
 HOST=$(hostname)
-HOSTS=$(hostname)
+HOST_NODES=
 RESERVED_ONLY=0
 OFFSET=$OFFSET
 # Optional config (defaults given)
+#BASE=/home/polkadot
 #EXE=polkadot
 #IN_PEERS=25
 #OUT_PEERS=25
 #PRUNING=16384
 #DB=paritydb
 #WASM_EXECUTION=compiled
+#DOMAIN=polka.host
 EOF
 		;;
 	init-validator)
@@ -201,6 +207,7 @@ HOST=$(hostname)
 HOSTS=$(hostname)
 OFFSET=$OFFSET
 # Optional config (defaults given)
+#BASE=/home/polkadot
 #EXE=polkadot
 #RESERVED_ONLY=1
 #IN_PEERS=25
@@ -208,6 +215,7 @@ OFFSET=$OFFSET
 #PRUNING=16384
 #DB=paritydb
 #WASM_EXECUTION=compiled
+#DOMAIN=polka.host
 EOF
 		;;
 	--version | -v)
