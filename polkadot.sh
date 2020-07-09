@@ -21,7 +21,6 @@ WASM_EXECUTION="compiled"
 PRUNING=16384
 IN_PEERS=25
 OUT_PEERS=25
-RESERVED_ONLY=1
 EXE=polkadot
 BASE=/home/polkadot
 
@@ -30,7 +29,13 @@ if [[ "$1" != "init-sentry" && "$1" != "init-validator" ]]; then
 	source ./polkadot.config
 fi
 
-INSTANCES=$INSTANCES || `count($HOST_NODES)`
+if [[ "$INSTANCES" == "" ]]; then
+	if [[ "$HOST_NODES" == ""]]; then
+		INSTANCES=1
+	else
+		INSTANCES=`count($HOST_NODES)`
+	fi
+fi
 POLKADOT=$BASE/$EXE
 
 # Integrate config into final options.
