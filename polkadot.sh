@@ -30,7 +30,7 @@ if [[ "$1" != "init-sentry" && "$1" != "init-validator" ]]; then
 fi
 
 if [[ "$INSTANCES" == "" ]]; then
-	if [[ "$HOST_NODES" == ""]]; then
+	if [[ "$HOST_NODES" == "" ]]; then
 		INSTANCES=1
 	else
 		INSTANCES=`count($HOST_NODES)`
