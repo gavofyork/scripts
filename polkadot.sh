@@ -121,6 +121,14 @@ case "$1" in
 		;;	
 	start | "")
 		[[ -x $POLKADOT ]] && $0 stop || $0 update
+		if [[ "$LOCAL_NODES" == "" ]]; then
+			for (( i = 0; i < $INSTANCES; i += 1 )); do
+				screen -d -m $0 loop $((i + 1))
+			done
+			sleep 1
+			echo "LOCAL_NODES='$(echo)$($0 address)'" >> ./polkadot.config
+			$0 stop
+		fi
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
 			echo "Starting instance $((i + 1)) of $INSTANCES..."
 			screen -d -m $0 loop $((i + 1))
