@@ -159,11 +159,11 @@ case "$1" in
 		;;
 	pack-db)
 		$0 stop
-		cd ~polkadot/nodes/
+		cd $BASE/nodes
 		mv instance-1/chains/polkadot/network/secret_ed25519 .
 		tar czf db.tgz instance-1
 		mv secret_ed25519 instance-1/chains/polkadot/network
-		$1 start
+		$0 start
 		;;
 	init-sentry)
 		if [ $# -lt 4 ]; then
