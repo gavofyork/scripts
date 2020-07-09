@@ -163,6 +163,7 @@ case "$1" in
 		mv instance-1/chains/polkadot/network/secret_ed25519 .
 		tar czf db.tgz instance-1
 		mv secret_ed25519 instance-1/chains/polkadot/network
+		cd ..
 		$0 start
 		;;
 	init-sentry)
