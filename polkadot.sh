@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.1.6"
+VERSION="0.1.7"
 
 # Set up defaults.
 DB="paritydb"
@@ -103,7 +103,7 @@ case "$1" in
 			--port $((30332 + INSTANCE)) \
 			--prometheus-port $((9614 + INSTANCE)) \
 			--ws-port $((9943 + INSTANCE)) \
-			--rpc-port $((9932 + INSTANCE))
+			--rpc-port $((9934 - INSTANCE))
 		;;
 	loop)
 		if [ $# -lt 2 ]; then
@@ -135,14 +135,14 @@ case "$1" in
 		;;
 	address)
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
-			MULTIADDR=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 + i)) | cut -d '"' -f 8)
+			MULTIADDR=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8)
 			IP=$(hostname -I | cut -f 1 -d ' ')
 			echo "/ip4/$IP/tcp/$((30333 + i))/p2p/$MULTIADDR"
 		done
 		;;
 	key | keys)
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
-			curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:$((9933 + i)) | cut -d '"' -f 8
+			curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8
 		done
 		;;
 	update)
