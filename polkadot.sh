@@ -33,7 +33,7 @@ if [[ "$INSTANCES" == "" ]]; then
 	if [[ "$HOST_NODES" == "" ]]; then
 		INSTANCES=1
 	else
-		INSTANCES=`count($HOST_NODES)`
+		INSTANCES=`count $HOST_NODES`
 	fi
 fi
 POLKADOT=$BASE/$EXE
@@ -121,12 +121,11 @@ case "$1" in
 		;;	
 	start | "")
 		[[ -x $POLKADOT ]] && $0 stop || $0 update
-		if [[ "$LOCAL_NODES" == "" ]]; then
+		if [[ "$HOST_NODES" == "" ]]; then
 			for (( i = 0; i < $INSTANCES; i += 1 )); do
 				screen -d -m $0 loop $((i + 1))
 			done
-			sleep 1
-			echo "LOCAL_NODES='$(echo)$($0 address)'" >> ./polkadot.config
+			echo "HOST_NODES='$(echo)$($0 address)'" >> ./polkadot.config
 			$0 stop
 		fi
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
@@ -148,9 +147,13 @@ case "$1" in
 		;;
 	address)
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
-			MULTIADDR=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8)
+			M=""
+			while [[ "$M" == "" ]]
+				M=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8)
+				[[ "$M" == "" ]] && sleep 1
+			done
 			IP=$(hostname -I | cut -f 1 -d ' ')
-			echo "/ip4/$IP/tcp/$((30333 + i))/p2p/$MULTIADDR"
+			echo "/ip4/$IP/tcp/$((30333 + i))/p2p/$M"
 		done
 		;;
 	key | keys)
