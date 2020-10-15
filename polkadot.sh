@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.2.2"
+VERSION="0.2.3"
 
 count() {
 	printf $#
