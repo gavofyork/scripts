@@ -154,7 +154,7 @@ case "$1" in
 	address)
 		for (( i = 0; i < $INSTANCES; i += 1 )); do
 			M=""
-			while [[ "$M" == "" ]]
+			while [[ "$M" == "" ]]; do
 				M=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8)
 				[[ "$M" == "" ]] && sleep 1
 			done
