@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.2.1"
+VERSION="0.2.2"
 
 count() {
 	printf $#
@@ -101,7 +101,13 @@ case "$1" in
 		fi
 
 		DB_PATH="$BASE/nodes/instance-$INSTANCE"
-		$POLKADOT $MODE $OPTIONS \
+
+		if [[ "$TELEMETRY" != "" ]]; then
+			TELEMETRY_OPT="--telemetry-url"
+			TELEMETRY_ARG="$TELEMETRY 0"
+		fi
+
+		$POLKADOT $MODE $OPTIONS $TELEMETRY_OPT "$TELEMETRY_ARG" \
 			-d $DB_PATH \
 			--name "$FULLNAME" \
 			$RESERVED_NODES \
@@ -161,7 +167,7 @@ case "$1" in
 			curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8
 		done
 		;;
-	update)
+	update | upgrade)
 		mv -f $POLKADOT $POLKADOT.old 2> /dev/null
 		echo "Downloading latest release..."
 		wget -q https://github.com/paritytech/polkadot/releases/latest/download/polkadot
