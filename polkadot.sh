@@ -70,6 +70,8 @@ case "$1" in
 		elif [[ "$VALIDATORS" != "" ]]; then
 			VALIDATOR_NODE="$(echo $VALIDATORS | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
 			MODE="--sentry $VALIDATOR_NODE"
+		elif [[ "$VALIDATOR" != "" ]]; then
+			MODE="--validator"
 		else
 			MODE=""
 		fi
