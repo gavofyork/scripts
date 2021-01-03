@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.3.1"
+VERSION="0.3.2"
 
 count() {
 	printf $#
@@ -153,8 +153,8 @@ case "$1" in
 		echo "Restarting..."
 		pkill -x $EXE
 		;;
-	address)
-		BEGIN=1
+	address | addresses)
+		BEGIN=0
 		END=$INSTANCES
 		if [ $# -eq 2 ]; then
 			END=$2
@@ -177,7 +177,7 @@ case "$1" in
 		done
 		;;
 	key | keys)
-		BEGIN=1
+		BEGIN=0
 		END=$INSTANCES
 		if [ $# -eq 2 ]; then
 			END=$2
