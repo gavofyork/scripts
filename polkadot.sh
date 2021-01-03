@@ -215,6 +215,31 @@ case "$1" in
 		cd ..
 		$0 start
 		;;
+	init)
+		if [ $# -lt 3 ]; then
+			echo "Usage: $0 init-sentry <name> <instances> [<offset>]"
+			exit
+		fi
+		[[ -e polkadot.config ]] && mv -f polkadot.config polkadot.config.old
+		OFFSET=$4 || "0"
+		cat > polkadot.config << EOF
+NAME="$2"
+INSTANCES=$3
+HOST=$(hostname)
+HOST_NODES=
+RESERVED_ONLY=0
+OFFSET=$OFFSET
+# Optional config (defaults given)
+#BASE=/home/polkadot
+#EXE=polkadot
+#IN_PEERS=25
+#OUT_PEERS=25
+#PRUNING=16384
+#DB=paritydb
+#WASM_EXECUTION=compiled
+#DOMAIN=polka.host
+EOF
+		;;
 	init-sentry)
 		if [ $# -lt 4 ]; then
 			echo "Usage: $0 init-sentry <name> <instances> <validators-name> [<offset>]"
@@ -280,5 +305,11 @@ EOF
 		echo "  stop"
 		echo "  restart"
 		echo "  update"
+		echo "  update-self"
+		echo "  packdb"
+		echo "  key INDEX"
+		echo "  address INDEX"
+		echo "  keys ( START_INDEX COUNT ? ) ?"
+		echo "  addresses ( START_INDEX COUNT ? ) ?"
 		;;
 esac
