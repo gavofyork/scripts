@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.3.2"
+VERSION="0.3.3"
 
 count() {
 	printf $#
@@ -60,9 +60,14 @@ case "$1" in
 			FULLNAME="$NAME-$INSTANCE"
 		fi
 
+		# Identify the hub instance - the others connect to these, and it connects to all others locally.
 		CUT=$(which gcut || which cut)
 		if [[ "$HOST_NODES" != "" ]]; then
-			LOCAL_NODES="$(echo $HOST_NODES | $CUT --complement -d ' ' -f $INSTANCE)"
+			if [[ "$INSTANCE" == "1" ]]; then
+				LOCAL_NODES="$(echo $HOST_NODES | $CUT --complement -d ' ' -f $INSTANCE)"
+			else
+				LOCAL_NODES="$(echo $HOST_NODES | $CUT -d ' ' -f $INSTANCE)"
+			fi
 		fi
 		if [[ "$SENTRIES" != "" ]]; then
 			SENTRY_NODE="$(echo $SENTRIES | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
@@ -79,7 +84,6 @@ case "$1" in
 		echo "$HOST: $FULLNAME"
 		echo "MODE: $MODE"
 		echo "OPTIONS: $OPTIONS"
-		echo "OTHER_HOSTS: $OTHER_HOSTS"
 		echo "LOCAL_NODES: $LOCAL_NODES"
 		echo "RESERVED: $RESERVED"
 		if [[ "$SENTRIES" != "" ]]; then
@@ -215,92 +219,12 @@ case "$1" in
 		cd ..
 		$0 start
 		;;
-	init)
-		if [ $# -lt 3 ]; then
-			echo "Usage: $0 init-sentry <name> <instances> [<offset>]"
-			exit
-		fi
-		[[ -e polkadot.config ]] && mv -f polkadot.config polkadot.config.old
-		OFFSET=$4 || "0"
-		cat > polkadot.config << EOF
-NAME="$2"
-INSTANCES=$3
-HOST=$(hostname)
-HOST_NODES=
-RESERVED_ONLY=0
-OFFSET=$OFFSET
-# Optional config (defaults given)
-#BASE=/home/polkadot
-#EXE=polkadot
-#IN_PEERS=25
-#OUT_PEERS=25
-#PRUNING=16384
-#DB=paritydb
-#WASM_EXECUTION=compiled
-#DOMAIN=polka.host
-EOF
-		;;
-	init-sentry)
-		if [ $# -lt 4 ]; then
-			echo "Usage: $0 init-sentry <name> <instances> <validators-name> [<offset>]"
-			exit
-		fi
-		[[ -e polkadot.config ]] && mv -f polkadot.config polkadot.config.old
-		OFFSET=$5 || "0"
-		cat > polkadot.config << EOF
-NAME="$2"
-INSTANCES=$3
-VALIDATORS="$4"
-HOST=$(hostname)
-HOST_NODES=
-RESERVED_ONLY=0
-OFFSET=$OFFSET
-# Optional config (defaults given)
-#BASE=/home/polkadot
-#EXE=polkadot
-#IN_PEERS=25
-#OUT_PEERS=25
-#PRUNING=16384
-#DB=paritydb
-#WASM_EXECUTION=compiled
-#DOMAIN=polka.host
-EOF
-		;;
-	init-validator)
-		if [ $# -lt 4 ]; then
-			echo "Usage: $0 init-validator <name> <instances> <sentries-name> [<offset>]"
-			exit
-		fi
-		[[ -e polkadot.config ]] && mv -f polkadot.config polkadot.config.old
-		OFFSET=$5 || "0"
-		cat > polkadot.config << EOF
-NAME="$2"
-INSTANCES=$3
-SENTRIES="$4"
-BASE=$(pwd)
-HOST=$(hostname)
-HOSTS=$(hostname)
-OFFSET=$OFFSET
-# Optional config (defaults given)
-#BASE=/home/polkadot
-#EXE=polkadot
-#RESERVED_ONLY=1
-#IN_PEERS=25
-#OUT_PEERS=25
-#PRUNING=16384
-#DB=paritydb
-#WASM_EXECUTION=compiled
-#DOMAIN=polka.host
-EOF
-		;;
 	--version | -v)
 		echo "$0 v$VERSION"
 		;;
 	*)
 		echo "Usage: $0 [COMMAND] [OPTIONS]"
 		echo "Commands:"
-		echo "  init-sentry"
-		echo "  init-validator"
 		echo "  start"
 		echo "  stop"
 		echo "  restart"
