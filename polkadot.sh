@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.2.3"
+VERSION="0.3.1"
 
 count() {
 	printf $#
@@ -154,7 +154,19 @@ case "$1" in
 		pkill -x $EXE
 		;;
 	address)
-		for (( i = 0; i < $INSTANCES; i += 1 )); do
+		BEGIN=1
+		END=$INSTANCES
+		if [ $# -eq 2 ]; then
+			END=$2
+			BEGIN=$((END - 1))
+		fi
+		if [ $# -eq 3 ]; then
+			I=$2
+			BEGIN=$(($I - 1))
+			I=$3
+			END=$(($BEGIN + I))
+		fi
+		for (( i = $BEGIN; i < $END; i += 1 )); do
 			M=""
 			while [[ "$M" == "" ]]; do
 				M=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8)
@@ -165,7 +177,20 @@ case "$1" in
 		done
 		;;
 	key | keys)
-		for (( i = 0; i < $INSTANCES; i += 1 )); do
+		BEGIN=1
+		END=$INSTANCES
+		if [ $# -eq 2 ]; then
+			END=$2
+			BEGIN=$((END - 1))
+		fi
+		if [ $# -eq 3 ]; then
+			I=$2
+			BEGIN=$(($I - 1))
+			I=$3
+			END=$(($BEGIN + I))
+		fi
+		for (( i = $BEGIN; i < $END; i += 1 )); do
+			echo -n "$((i + 1)): "
 			curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8
 		done
 		;;
@@ -184,9 +209,9 @@ case "$1" in
 	pack-db)
 		$0 stop
 		cd $BASE/nodes
-		mv instance-1/chains/polkadot/network/secret_ed25519 .
+		mv instance-1/chains/polkadot/network instance-1/chains/polkadot/keystore .
 		tar czf db.tgz instance-1
-		mv secret_ed25519 instance-1/chains/polkadot/network
+		mv network keystore instance-1/chains/polkadot
 		cd ..
 		$0 start
 		;;
