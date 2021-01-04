@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.3.3"
+VERSION="0.3.4"
 
 count() {
 	printf $#
@@ -146,12 +146,12 @@ case "$1" in
 		done
 		;;
 	stop)
-		if [[ -x $POLKADOT ]]; then
-			chmod -x $POLKADOT
+		chmod -x $POLKADOT
+		while [[ `ps aux | grep $POLKADOT | grep -v grep | wc -l` != "0" ]]; do
 			pkill -x $EXE 2> /dev/null
 			sleep 1
-			chmod +x $POLKADOT
-		fi
+		done
+		chmod +x $POLKADOT
 		;;
 	restart)
 		echo "Restarting..."
