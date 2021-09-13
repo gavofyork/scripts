@@ -4,7 +4,7 @@
 
 **PLEASE NOTE: THESE SCRIPTS ARE INCOMPLETE, NOT ESPECIALLY WELL TESTED, PROBABLY INSECURE AND ALMOST CERTAINLY AT LEAST A BIT BUGGY. I'M PUTTING THEM OUT HERE IN THE INTEREST OF SHARING WORK AND IDEAS, NOT FOR REAL-WORLD USAGE. IF YOU DO ANYTHING REMOTELY IMPORTANT WITH THEM THEN YOU'RE MAD. DON'T BLAME ME WHEN THEY GO WRONG OR DO SOMETHING YOU DON'T EXPECT.**
 
-These scripts were created to help me deploy and maintain a bunch of validator nodes. They support:
+These scripts were created to help me deploy and maintain a bunch of validator nodes and as such they're pretty opinionated. They support:
 
 - running multiple nodes on a single host;
 - setting up validators or non-validating full-nodes;
@@ -13,7 +13,7 @@ These scripts were created to help me deploy and maintain a bunch of validator n
 - easy (re-)starting and stopping nodes;
 - avoiding all but one manual chain synchronization;
 - automatic interconnection of deployed nodes using a two-level star network and reserved peers, where the first node on each host connects to all nodes on the same host as well as all first nodes on all other hosts;
-- optionally set up of each host with Grafana and Prometheus;
+- optional set up of each host with Grafana and Prometheus;
 - configuration of a baseline firewall on each host;
 - running all node instances in a `screen` session for easily seeing what is happening on each;
 - updating all hosts at once with a single CLI command;
