@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #   Copyright 2019-2021 Gavin Wood
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,272 +13,172 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-VERSION="0.4.7"
-
-count() {
-	printf $#
-}
-trim() {
-    local var="$*"
-    var="${var#"${var%%[![:space:]]*}"}"
-    var="${var%"${var##*[![:space:]]}"}"
-    printf '%s' "$var"
-}
-
-# Set up defaults.
-DB="paritydb"
-WASM_EXECUTION="compiled"
-PRUNING=16384
-IN_PEERS=25
-OUT_PEERS=25
-EXE=polkadot
-BASE=/home/polkadot
-
-# Bring in user config.
-if [[ "$1" != "init-sentry" && "$1" != "init-validator" ]]; then
-	source ./polkadot.config
-fi
-
-# Bring in head nodes
-HEAD_NODE_FILE=$BASE/headnodes
-if [[ -e $HEAD_NODE_FILE ]]; then
-	HEAD_NODES="$(cat $HEAD_NODE_FILE)"
-fi
-
-if [[ "$INSTANCES" == "" ]]; then
-	if [[ "$HOST_NODES" == "" ]]; then
-		INSTANCES=1
-	else
-		INSTANCES=`count $HOST_NODES`
+declare -A STASH
+HOST_CACHE_FILE=.hosts.cache
+if [[ -e config ]]; then
+	source ./config
+	if [[ "$HEAD_HOST" == "" || "$HEAD_HOST_PUBKEY" == "" ]]; then
+		echo "Network config (`config`) file must contain `HEAD_HOST` and `HEAD_HOST_PUBKEY` definitions"
+		exit 1
 	fi
+	HEAD_HOSTNAME=${HEAD_HOST/.*/}
+	DOMAIN=${HEAD_HOST/$HEAD_HOSTNAME./}
+	HAVE_NETWORK_CONFIG=1
 fi
-POLKADOT=$BASE/$EXE
 
-# Integrate config into final options.
-[[ "$RESERVED_ONLY" != "0" && "$RESERVED_ONLY" != "" ]] && OPTIONS="$OPTIONS --reserved-only"
-[[ $DB ]] && OPTIONS="$OPTIONS --db=$DB"
-[[ $WASM_EXECUTION ]] && OPTIONS="$OPTIONS --wasm-execution=$WASM_EXECUTION"
-[[ $IN_PEERS ]] && OPTIONS="$OPTIONS --in-peers=$IN_PEERS"
-[[ $OUT_PEERS ]] && OPTIONS="$OPTIONS --out-peers=$OUT_PEERS"
-[[ "$PRUNING" != "" ]] && OPTIONS="$OPTIONS --unsafe-pruning --pruning=$PRUNING"
+declare -A HOST_CACHE
+[[ -e $HOST_CACHE_FILE ]] && source $HOST_CACHE_FILE
+
+function hostname {
+	local IP=$1
+	if [[ "${HOST_CACHE[$IP]}" == "" ]]; then
+		HOSTNAME=$(ssh $IP hostname)
+		HOST_CACHE[$IP]=$HOSTNAME
+		echo "HOST_CACHE["$IP"]=$HOSTNAME" >> $HOST_CACHE_FILE
+	fi
+	echo ${HOST_CACHE[$IP]}
+}
+function node_ips {
+	local HEAD_NODES=$(ssh polkadot@$HEAD_HOST cat headnodes)
+	for NODE in $HEAD_NODES; do
+		X=${NODE/\/ip4\//}
+		IP=${X/\/*/}
+		echo -n "$IP "
+	done
+}
 
 case "$1" in
-	run)
-		if [ $# -lt 2 ]; then
-			echo "Usage: $0 run <instance>"
-			exit
-		fi
-		INSTANCE=$2
-
-		if [[ "$INSTANCES" == "1" ]]; then
-			FULLNAME="$NAME"
-		else
-			FULLNAME="$NAME-$INSTANCE"
-		fi
-
-		# Identify the hub instance - the others connect to these, and it connects to all others locally.
-		CUT=$(which gcut || which cut)
-		if [[ "$HOST_NODES" != "" ]]; then
-			if [[ "$INSTANCE" == "1" ]]; then
-				LOCAL_NODES="$(echo $HOST_NODES | $CUT --complement -d ' ' -f $INSTANCE)"
-			else
-				LOCAL_NODES="$(echo $HOST_NODES | $CUT -d ' ' -f $INSTANCE)"
-			fi
-		fi
-		if [[ "$SENTRIES" != "" ]]; then
-			SENTRY_NODE="$(echo $SENTRIES | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
-			MODE="--validator"
-		elif [[ "$VALIDATORS" != "" ]]; then
-			VALIDATOR_NODE="$(echo $VALIDATORS | $CUT -d ' ' -f $((INSTANCE + OFFSET)))"
-			MODE="--sentry $VALIDATOR_NODE"
-		elif [[ "$VALIDATOR" != "" ]]; then
-			MODE="--validator"
-		else
-			MODE=""
-		fi
-
-		for N in $HEAD_NODES; do
-			if [[ "$(echo $HOST_NODES | grep $N)" == "" ]]; then
-				RESERVED="$RESERVED $N"
-			fi
+	update-script)
+		VERSION=$(grep VERSION= host-polkadot.sh)
+		echo Updating polkadot.sh to version ${VERSION/VERSION=/}...
+		for IP in $(node_ips); do
+			HOSTNAME="$(hostname $IP)"
+			echo "Installing on $HOSTNAME..."
+			ssh $IP "cat > /tmp/polkadot.sh && chmod +x /tmp/polkadot.sh && sudo chown polkadot /tmp/polkadot.sh && sudo mv /tmp/polkadot.sh /usr/bin" < ./host-polkadot.sh &
 		done
-
-		echo "$HOST: $FULLNAME"
-		echo "MODE: $MODE"
-		echo "OPTIONS: $OPTIONS"
-		echo "LOCAL_NODES: $LOCAL_NODES"
-		echo "RESERVED: $RESERVED"
-		if [[ "$SENTRIES" != "" ]]; then
-			echo "SENTRY_NODE: $SENTRY_NODE"
-		elif [[ "$VALIDATORS" != "" ]]; then
-			echo "VALIDATOR_NODE: $VALIDATOR_NODE"
-		else
-			echo "(FULL NODE)"
-		fi
-
-		if [[ ! -e $BASE/nodes/instance-$INSTANCE ]]; then
-			if [[ -e $BASE/nodes/val-$INSTANCE ]]; then
-				mv $BASE/nodes/val-$INSTANCE $BASE/nodes/instance-$INSTANCE
-			elif [[ -e ~/.local/share/polkadot ]]; then
-				mv ~/.local/share/polkadot $BASE/nodes/instance-$INSTANCE
-			fi
-		fi
-
-		if [[ "$LOCAL_NODES$RESERVED$SENTRY_NODE" != "" ]]; then
-			RESERVED_NODES="--reserved-nodes $LOCAL_NODES $RESERVED $SENTRY_NODE"
-		fi
-
-		DB_PATH="$BASE/nodes/instance-$INSTANCE"
-
-		if [[ "$TELEMETRY" != "" ]]; then
-			TELEMETRY_OPT="--telemetry-url"
-			TELEMETRY_ARG="$TELEMETRY 0"
-		fi
-
-		$POLKADOT $MODE $OPTIONS $TELEMETRY_OPT "$TELEMETRY_ARG" \
-			-d $DB_PATH \
-			--name "$FULLNAME" \
-			$RESERVED_NODES \
-			--port $((30332 + INSTANCE)) \
-			--prometheus-port $((9614 + INSTANCE)) \
-			--ws-port $((9943 + INSTANCE)) \
-			--rpc-port $((9934 - INSTANCE))
+		wait
 		;;
-	loop)
-		if [ $# -lt 2 ]; then
-			echo "Usage: $0 loop <instance>"
-			exit
-		fi
-		while [[ -x $POLKADOT ]] ; do
-			$0 run $2
+	update-binary)
+		for IP in $(node_ips); do
+			HOSTNAME="$(hostname $IP)"
+			echo "Updating $HOSTNAME..."
+			ssh $IP "/usr/bin/polkadot.sh update > /dev/null" < ./polkadot.sh &
 		done
+		wait
 		;;
-	start | "")
-		[[ -x $POLKADOT ]] && $0 stop || $0 update
-		if [[ "$HOST_NODES" == "" ]]; then
-			for (( i = 0; i < $INSTANCES; i += 1 )); do
-				screen -d -m $0 loop $((i + 1))
-			done
-			echo "HOST_NODES='$(echo)$($0 address)'" >> ./polkadot.config
-			$0 stop
-		fi
-		for (( i = 0; i < $INSTANCES; i += 1 )); do
-			echo "Starting instance $((i + 1)) of $INSTANCES..."
-			screen -d -m $0 loop $((i + 1))
-		done
-		;;
-	stop)
-		chmod -x $POLKADOT
-		while [[ `ps aux | grep $POLKADOT | grep -v grep | wc -l` != "0" ]]; do
-			pkill -x $EXE 2> /dev/null
-			sleep 1
-		done
-		chmod +x $POLKADOT
-		;;
-	add-head-node)
-		if [ $# -lt 2 ]; then
-			echo "Usage: $0 add-head-node <multiaddr>"
-			exit
-		fi
-		if [[ "$HEAD_NODE_FILE" == "" ]]; then
-			echo "Cannot add head node when no head node file exists"
-			exit
-		fi
-		HEAD_NODES="$HEAD_NODES $2"
-		echo "$HEAD_NODES" > "$HEAD_NODE_FILE"
-		for N in $HEAD_NODES; do
-			if [[ "$(echo $HOST_NODES | grep $N)" == "" ]]; then
+	api-config)
+		I=1
+		for IP in $(node_ips); do
+			J=1
+			HOSTNAME="$(hostname $IP)"
+			NODES=$(ssh polkadot@$IP /usr/bin/polkadot.sh address)
+			for NODE in $NODES; do
 				X=${N/\/ip4\//}
 				IP=${X/\/*/}
-				echo -n "Propagating to $IP..."
-				H=$(echo $HEAD_NODES | ssh -o StrictHostKeyChecking=no polkadot@$IP "cat > headnodes && hostname && /usr/bin/polkadot.sh restart > /dev/null")
-				echo "propagated to $H."
-			fi
-		done
-		$0 restart
-		;;
-	restart)
-		echo "Restarting..."
-		pkill -x $EXE
-		;;
-	address | addresses)
-		BEGIN=0
-		END=$INSTANCES
-		if [ $# -eq 2 ]; then
-			END=$2
-			BEGIN=$((END - 1))
-		fi
-		if [ $# -eq 3 ]; then
-			I=$2
-			BEGIN=$(($I - 1))
-			I=$3
-			END=$(($BEGIN + I))
-		fi
-		for (( i = $BEGIN; i < $END; i += 1 )); do
-			M=""
-			while [[ "$M" == "" ]]; do
-				M=$(curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "system_localPeerId", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8)
-				[[ "$M" == "" ]] && sleep 1
+				echo "[node_$I]"
+				echo "node_name=${HOSTNAME}_$J"
+				echo "ws_url=ws://$HOSTNAME.$DOMAIN:$((9943+J))"
+				I=$((I + 1))
+				J=$((J + 1))
 			done
-			IP=$(hostname -I | cut -f 1 -d ' ')
-			echo "/ip4/$IP/tcp/$((30333 + i))/p2p/$M"
 		done
 		;;
-	key | keys)
-		BEGIN=0
-		END=$INSTANCES
+	panic-config)
+		I=1
+		for IP in $(node_ips); do
+			J=1
+			HOSTNAME="$(hostname $IP)"
+			NODES=$(ssh polkadot@$IP /usr/bin/polkadot.sh address)
+			for NODE in $NODES; do
+				X=${N/\/ip4\//}
+				IP=${X/\/*/}
+				echo "[node_$I]"
+				echo "node_name=${HOSTNAME}_$J"
+				echo "chain_name=Polkadot"
+				echo "node_ws_url=ws://$HOSTNAME.$DOMAIN:$((9943+J))"
+				echo "node_is_validator=true"
+				echo "is_archive_node=false"
+				echo "monitor_node=true"
+				echo "use_as_data_source=true"
+				echo "stash_account_address=${STASH[${HOSTNAME}_$J]}"
+				I=$((I + 1))
+				J=$((J + 1))
+			done
+		done
+		;;
+	deploy)
+		if [ $# -lt 3 ]; then
+			echo "Usage: $0 deploy CONFIG_FILE USER"
+			exit 1
+		fi
+
+		source $2
+
+		if [[ $HAVE_NETWORK_CONFIG ]]; then
+			echo "Copying database..."
+			ssh -o StrictHostKeyChecking=no root@$HOST.$DOMAIN "echo $HEAD_HOST_PUBKEY >> .ssh/authorized_keys" > /dev/null 2> /dev/null
+			ssh polkadot@$HEAD_HOST scp -o StrictHostKeyChecking=no /home/polkadot/nodes/db.tgz /home/polkadot/net.config root@$HOST.$DOMAIN: > /dev/null 2> /dev/null
+		fi
+
+		echo "Copying setup script and config..."
+		scp host-polkadot.sh setup.sh root@$HOST.$DOMAIN:
+		ssh root@$HOST.$DOMAIN chmod +x setup.sh
+		scp $2 root@$HOST.$DOMAIN:polkadot.config
+
+		echo "Setting up..."
+		ssh root@$HOST.$DOMAIN "./setup.sh polkadot.config $3" > tee /tmp/output
+
+		if [[ $HAVE_NETWORK_CONFIG ]]; then
+			echo "Adding new head-node..."
+			HEAD_NODE="$(ssh polkadot@$HOST.$DOMAIN /usr/bin/polkadot.sh address 1)"
+			ssh polkadot@$HEAD_HOST /usr/bin/polkadot.sh add-head-node $HEAD_NODE
+		else
+			echo "Writing initial network config file..."
+			SSH_ID="$(ssh -o StrictHostKeyChecking=no polkadot@$HOST.$DOMAIN ssh-keygen -t rsa -q -f .ssh/id_rsa -N '' && cat .ssh/id_rsa.pub)"
+			echo > config < EOF
+DOMAIN=$DOMAIN
+HEAD_HOST=$HOST.$DOMAIN
+HEAD_HOST_PUBKEY="$SSH_ID"
+EOF
+			echo
+			echo "Once your node is synchronized, run the following command on it to ensure future deployments need"
+			echo "not synchronize again:"
+			echo
+			echo "  ssh polkadot@$HOST.$DOMAIN polka pack-db"
+			echo
+			echo "Once done, further nodes may be deployed."
+		fi
+		;;
+	help | --help | -h)
+		echo "Usage:"
+		echo "  $0 update-script   Update the polkadot.sh script on all nodes."
+		echo "  $0 update-binary   Update the polkadot binary on all nodes."
+		echo "  $0 api-config      Auto-generate a polkadot_api_server 'user_config_nodes.ini' file."
+		echo "  $0 panic-config    Auto-generate a panic_polkadot 'user_config_nodes.ini' file."
+		echo "  $0 deploy CONFIG_FILE USER   Deploy a new Polkadot host."
+		echo "  $0 host HOST COMMAND   Execute a command on a deployed host."
+		;;
+	host)
+		if [ $# -lt 2 ]; then
+			echo "Unknown usage. Use $0 help for more information."
+			exit 1
+		fi
 		if [ $# -eq 2 ]; then
-			END=$2
-			BEGIN=$((END - 1))
+			ssh -t polkadot@$2.$DOMAIN
+		else
+			ssh -t polkadot@$2.$DOMAIN polka "${@:3}"
 		fi
-		if [ $# -eq 3 ]; then
-			I=$2
-			BEGIN=$(($I - 1))
-			I=$3
-			END=$(($BEGIN + I))
-		fi
-		for (( i = $BEGIN; i < $END; i += 1 )); do
-			echo -n "$((i + 1)): "
-			curl -s -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:$((9933 - i)) | cut -d '"' -f 8
-		done
-		;;
-	update | upgrade)
-		mv -f $POLKADOT $POLKADOT.old 2> /dev/null
-		echo "Downloading latest release..."
-		wget -q https://github.com/paritytech/polkadot/releases/latest/download/polkadot
-		chmod +x $POLKADOT
-		$0 restart
-		;;
-	update-self)
-		wget -q https://raw.githubusercontent.com/gavofyork/scripts/master/polkadot.sh
-		chmod +x polkadot.sh
-		sudo mv polkadot.sh $0
-		;;
-	pack-db | packdb)
-		$0 stop
-		cd $BASE/nodes
-		mv instance-1/chains/polkadot/network instance-1/chains/polkadot/keystore .
-		tar czf db.tgz instance-1
-		mv network keystore instance-1/chains/polkadot
-		cd ..
-		$0 start
-		;;
-	--version | -v)
-		echo "$0 v$VERSION"
 		;;
 	*)
-		echo "Usage: $0 [COMMAND] [OPTIONS]"
-		echo "Commands:"
-		echo "  start"
-		echo "  stop"
-		echo "  restart"
-		echo "  update"
-		echo "  update-self"
-		echo "  add-head-node"
-		echo "  packdb"
-		echo "  key INDEX"
-		echo "  address INDEX"
-		echo "  keys ( START_INDEX COUNT ? ) ?"
-		echo "  addresses ( START_INDEX COUNT ? ) ?"
-		;;
+		if [ $# -lt 1 ]; then
+			echo "Unknown usage. Use $0 help for more information."
+			exit 1
+		fi
+		if [ $# -eq 1 ]; then
+			ssh -t polkadot@$1.$DOMAIN
+		else
+			ssh -t polkadot@$1.$DOMAIN polka "${@:2}"
+		fi
 esac
+
+[[ $(echo $SCREENS | wc -l) != "$INSTANCES" ]]

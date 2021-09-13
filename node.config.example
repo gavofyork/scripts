@@ -17,6 +17,14 @@ DOMAIN=my-domain.com
 # this unset.
 #RESERVED_ONLY=1
 
+# Number of peers to try to find, either through incoming connections or outgoing connections.
+#IN_PEERS=25
+#OUT_PEERS=25
+
+# Set to the number of blocks of history if the node should do state pruning. If unset, then no
+# pruning is done (and the state database will grow indefinitely).
+PRUNING=1024
+
 # Whether your nodes should run as validators. Leave unset for non-validating full nodes.
 #VALIDATOR=1
 

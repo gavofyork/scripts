@@ -78,10 +78,9 @@ EOL
   fi
 fi
 
-echo "Fetching and installing script..."
-wget -q https://raw.githubusercontent.com/gavofyork/scripts/master/polkadot.sh
-chmod +x polkadot.sh
-mv polkadot.sh /usr/bin
+echo "Installing script..."
+chmod +x host-polkadot.sh
+mv host-polkadot.sh /usr/bin/polkadot.sh
 ln -s /usr/bin/polkadot.sh /usr/bin/polka
 
 if [[ ! -e nodes ]]; then mkdir nodes; fi
