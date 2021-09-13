@@ -15,15 +15,25 @@
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <config-file> <user>"
-    exit
+    exit 1
 fi
 
-source config
+if [[ -e config ]]; then
+    source config
+    if [[ "$HEAD_HOST" == "" || "$HEAD_HOST_PUBKEY" == "" ]]; then
+        echo "Network config (`config`) file must contain `HEAD_HOST` and `HEAD_HOST_PUBKEY` definitions"
+        exit 1
+    fi
+    HAVE_NETWORK_CONFIG=1
+fi
+
 source $1
 
-echo "Copying database..."
-ssh -o StrictHostKeyChecking=no root@$HOST.$DOMAIN "echo $HEAD_HOST_PUBKEY >> .ssh/authorized_keys" > /dev/null 2> /dev/null
-ssh polkadot@$HEAD_HOST scp -o StrictHostKeyChecking=no /home/polkadot/nodes/db.tgz /home/polkadot/net.config root@$HOST.$DOMAIN: > /dev/null 2> /dev/null
+if [[ $HAVE_NETWORK_CONFIG ]]; then
+    echo "Copying database..."
+    ssh -o StrictHostKeyChecking=no root@$HOST.$DOMAIN "echo $HEAD_HOST_PUBKEY >> .ssh/authorized_keys" > /dev/null 2> /dev/null
+    ssh polkadot@$HEAD_HOST scp -o StrictHostKeyChecking=no /home/polkadot/nodes/db.tgz /home/polkadot/net.config root@$HOST.$DOMAIN: > /dev/null 2> /dev/null
+fi
 
 echo "Copying setup script and config..."
 scp setup.sh root@$HOST.$DOMAIN:
@@ -33,6 +43,23 @@ scp $1 root@$HOST.$DOMAIN:polkadot.config
 echo "Setting up..."
 ssh root@$HOST.$DOMAIN "./setup.sh polkadot.config $2" > tee /tmp/output
 
-echo "Adding new head-node..."
-HEAD_NODE="$(ssh polkadot@$HOST.$DOMAIN /usr/bin/polkadot.sh address 1)"
-ssh polkadot@$HEAD_HOST /usr/bin/polkadot.sh add-head-node $HEAD_NODE
+if [[ $HAVE_NETWORK_CONFIG ]]; then
+    echo "Adding new head-node..."
+    HEAD_NODE="$(ssh polkadot@$HOST.$DOMAIN /usr/bin/polkadot.sh address 1)"
+    ssh polkadot@$HEAD_HOST /usr/bin/polkadot.sh add-head-node $HEAD_NODE
+else
+    echo "Writing initial network config file..."
+    SSH_ID="$(ssh -o StrictHostKeyChecking=no polkadot@$HOST.$DOMAIN ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N "" && cat .ssh/id_rsa.pub)"
+    echo > config < EOF
+DOMAIN=$DOMAIN
+HEAD_HOST=$HOST.$DOMAIN
+HEAD_HOST_PUBKEY="$SSH_ID"
+EOF
+    echo
+    echo "Once your node is synchronized, run the following command on it to ensure future deployments need"
+    echo "not synchronize again:"
+    echo
+    echo "  ssh polkadot@$HOST.$DOMAIN polka packdb"
+    echo
+    echo "Once done, further nodes may be deployed."
+fi

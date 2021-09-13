@@ -2,9 +2,9 @@
 
 **DISCLAIMER:**
 
-**PLEASE NOTE: THESE SCRIPTS ARE PROBABLY INSECURE AND QUITE POSSIBLY BUGGY. I'M PUTTING THEM OUT HERE IN THE INTEREST OF SHARING WORK AND IDEAS, NOT FOR REAL-WORLD USAGE. IF YOU DO ANYTHING REMOTELY IMPORTANT WITH THEM THEN YOU'RE MAD. DON'T BLAME ME WHEN THEY GO WRONG OR DO SOMETHING YOU DON'T EXPECT.**
+**PLEASE NOTE: THESE SCRIPTS ARE INCOMPLETE, NOT ESPECIALLY WELL TESTED, PROBABLY INSECURE AND ALMOST CERTAINLY AT LEAST A BIT BUGGY. I'M PUTTING THEM OUT HERE IN THE INTEREST OF SHARING WORK AND IDEAS, NOT FOR REAL-WORLD USAGE. IF YOU DO ANYTHING REMOTELY IMPORTANT WITH THEM THEN YOU'RE MAD. DON'T BLAME ME WHEN THEY GO WRONG OR DO SOMETHING YOU DON'T EXPECT.**
 
-These scripts help deploy and maintain a bunch of validator nodes. They support running multiple nodes on a single host. Nodes may be validators or non-validating full nodes. Scripts allow easy updating of the node software, determining keys and addresses of each node, starting and stopping them and avoiding all but one manual synchronisation. Nodes are automatically interconnected using a two-level star network, where the first node on each host connedts to all nodes on the same host as well as all first nodes on all other hosts. It sets up each host with Grafana, Prometheus and a firewall, as well as running all node instances in a `screen` session for easily seeing what is happening on each. It allows all nodes to have their software updated at once with a single CLI command and provides auto-generated configurations for Polkadot PANIC. It allows nodes running on the same host to be configured with arbitrary CLI options. It only supports Ubuntu 20.04 hosts and requires a single DNS domain with `A` records for each host.
+These scripts were created to help me deploy and maintain a bunch of validator nodes. They support running multiple nodes on a single host. Nodes may be validators or non-validating full nodes. Scripts allow easy updating of the node software, determining keys and addresses of each node, starting and stopping them and avoiding all but one manual synchronization. Nodes are automatically interconnected using a two-level star network, where the first node on each host connects to all nodes on the same host as well as all first nodes on all other hosts. It sets up each host with Grafana, Prometheus and a firewall, as well as running all node instances in a `screen` session for easily seeing what is happening on each. It allows all nodes to have their software updated at once with a single CLI command and provides auto-generated configurations for Polkadot PANIC. It allows nodes running on the same host to be configured with arbitrary CLI options. It only supports Ubuntu 20.04 hosts and requires a single DNS domain with `A` records for each host.
 
 ## Usage
 
@@ -39,7 +39,7 @@ $ ./deploy.sh my-first-host.config `whoami`
 
 Once the first host has been synced, you probably want to create a packed database dump, so that you won't need to manually sync any other hosts you deploy.
 
-First wait until the node is synced; you can check by looking at the telemetry entrty for your node. Once synced run:
+First wait until the node is synced; you can check by looking at the telemetry entry for your node. Once synced run:
 
 ```
 $ ssh polkadot@my-first-host.my-domain.com polka packdb
@@ -57,7 +57,7 @@ And then altering your network config in order to reference `my-first-node.my-do
 
 ### Network Maintenance
 
-`update.sh` is a script which may be used to update all hosts, either their polkadot binaries `./update.sh binary` or their host maintenance scripts `./update.sh script`. It can also be used to auto-generates configuration files for PANIC `./update.sh panic` and polkadot-api `./update.sh api`.
+`update.sh` is a script which may be used to update all hosts, either their Polkadot binaries `./update.sh binary` or their host maintenance scripts `./update.sh script`. It can also be used to auto-generates configuration files for Polkadot PANIC `./update.sh panic` and Polkadot API Server `./update.sh api`.
 
 
 ### Host/Node Maintenance
@@ -111,6 +111,6 @@ There is no special process for decommissioning a host.
 
 ## Future work
 
-- Better initialisation story and support for first node
+- Better initialization story and support for first node
 - `polka screen <instance>` command
 - Remove requirement for DNS
