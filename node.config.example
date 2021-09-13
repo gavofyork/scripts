@@ -1,21 +1,6 @@
-#   Copyright 2019-2021 Gavin Wood
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+# Example host configuration file.
 
-# The number of Polkadot node instances to be deployed on this host.
-INSTANCES=4
-
-# The user-readable name of this host (this is used for telemetry).
+# The user-readable name of this host.
 NAME="My host name"
 
 # The hostname of this host (this should be used for the DNS entry).
@@ -24,24 +9,30 @@ HOST=my-host
 # The domain name of the network. The host should be reachable at $HOST.$DOMAIN.
 DOMAIN=my-domain.com
 
-# Whether to only connect to reserved nodes (this will result in a minimally connected network).
-RESERVED_ONLY=0
+# If set, then the number of Polkadot node instances to be deployed on this host. If
+# left unset, then there will be just one instance on the host.
+#INSTANCES=4
 
-# The telemetry server.
-TELEMETRY=ws://telemetry.polkadot.io:8000/submit
+# Whether to only connect to reserved nodes. At least one of your hosts should be configured with
+# this unset.
+#RESERVED_ONLY=1
 
-# Whether your nodes should run as validators.
-VALIDATOR=1
+# Whether your nodes should run as validators. Leave unset for non-validating full nodes.
+#VALIDATOR=1
 
-# If set, then opens RPC ports for this host to connect to nodes' RPC.
+# A custom telemetry server, if set.
+#TELEMETRY=ws://telemetry.my-domain.com:8000/submit
+
+# If set during setup, then this opens RPC ports on the host so that PANIC_HOST can connect to
+# the nodes' RPC.
 #PANIC_HOST="panic.my-domain.com"
 
 # Any further options.
-OPTIONS="--rpc-cors=all --unsafe-ws-external"
+#OPTIONS="--rpc-cors=all --unsafe-ws-external"
 
-# The database to use.
-DB=paritydb-experimental
+# The custom database to use, if any.
+#DB=paritydb-experimental
 
-# Whether to set up Prometheus and Grafana
+# Whether to set up Prometheus and Grafana on the host.
 #USE_PROMETHEUS=1
 #USE_GRAFANA=1

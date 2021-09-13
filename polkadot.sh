@@ -62,7 +62,7 @@ POLKADOT=$BASE/$EXE
 [[ $OUT_PEERS ]] && OPTIONS="$OPTIONS --out-peers=$OUT_PEERS"
 [[ "$PRUNING" != "" ]] && OPTIONS="$OPTIONS --unsafe-pruning --pruning=$PRUNING"
 
-case "$1" in 
+case "$1" in
 	run)
 		if [ $# -lt 2 ]; then
 			echo "Usage: $0 run <instance>"
@@ -254,7 +254,7 @@ case "$1" in
 		chmod +x polkadot.sh
 		sudo mv polkadot.sh $0
 		;;
-	pack-db)
+	pack-db | packdb)
 		$0 stop
 		cd $BASE/nodes
 		mv instance-1/chains/polkadot/network instance-1/chains/polkadot/keystore .

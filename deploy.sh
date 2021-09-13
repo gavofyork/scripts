@@ -59,7 +59,7 @@ EOF
     echo "Once your node is synchronized, run the following command on it to ensure future deployments need"
     echo "not synchronize again:"
     echo
-    echo "  ssh polkadot@$HOST.$DOMAIN polka packdb"
+    echo "  ssh polkadot@$HOST.$DOMAIN polka pack-db"
     echo
     echo "Once done, further nodes may be deployed."
 fi
