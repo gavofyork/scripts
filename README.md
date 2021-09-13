@@ -88,7 +88,7 @@ $ polka deploy my-second-host.config `whoami`
 - `polka update-script`: Update host maintenance scripts on all deployments.
 - `polka panic-config`: Generate configuration files for Polkadot PANIC.
 - `polka api-config`: Generate configuration files for Polkadot API Server.
-- `polka HOSTNAME COMMAND`: Run `polka` command on a deployed host.
+- `polka host HOSTNAME COMMAND`: Run `polka` command on a deployed host.
 ### Host/Node Maintenance
 
 Each host may be `ssh`ed into with the `polkadot` user and controlled individually with the
