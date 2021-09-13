@@ -11,10 +11,10 @@ These scripts were created to help me deploy and maintain a bunch of validator n
 - easy updating of the node software and scripts;
 - easy determining of keys and addresses of each node;
 - easy (re-)starting and stopping nodes;
-- avoid all but one manual chain synchronization;
+- avoiding all but one manual chain synchronization;
 - automatic interconnection of deployed nodes using a two-level star network and reserved peers, where the first node on each host connects to all nodes on the same host as well as all first nodes on all other hosts;
 - optionally set up of each host with Grafana and Prometheus;
-- configuration of a fairly restrictive firewall on each host;
+- configuration of a baseline firewall on each host;
 - running all node instances in a `screen` session for easily seeing what is happening on each;
 - updating all hosts at once with a single CLI command;
 - auto-generating configurations for Polkadot PANIC;
