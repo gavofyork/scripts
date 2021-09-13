@@ -3,7 +3,7 @@
 # Gav's Polkadot provisioning script.
 # By Gav.
 
-VERSION="0.3.4"
+VERSION="0.4.7"
 
 count() {
 	printf $#
@@ -11,7 +11,7 @@ count() {
 trim() {
     local var="$*"
     var="${var#"${var%%[![:space:]]*}"}"
-    var="${var%"${var##*[![:space:]]}"}"   
+    var="${var%"${var##*[![:space:]]}"}"
     printf '%s' "$var"
 }
 
@@ -27,6 +27,12 @@ BASE=/home/polkadot
 # Bring in user config.
 if [[ "$1" != "init-sentry" && "$1" != "init-validator" ]]; then
 	source ./polkadot.config
+fi
+
+# Bring in head nodes
+HEAD_NODE_FILE=$BASE/headnodes
+if [[ -e $HEAD_NODE_FILE ]]; then
+	HEAD_NODES="$(cat $HEAD_NODE_FILE)"
 fi
 
 if [[ "$INSTANCES" == "" ]]; then
@@ -81,6 +87,12 @@ case "$1" in
 			MODE=""
 		fi
 
+		for N in $HEAD_NODES; do
+			if [[ "$(echo $HOST_NODES | grep $N)" == "" ]]; then
+				RESERVED="$RESERVED $N"
+			fi
+		done
+
 		echo "$HOST: $FULLNAME"
 		echo "MODE: $MODE"
 		echo "OPTIONS: $OPTIONS"
@@ -130,7 +142,7 @@ case "$1" in
 		while [[ -x $POLKADOT ]] ; do
 			$0 run $2
 		done
-		;;	
+		;;
 	start | "")
 		[[ -x $POLKADOT ]] && $0 stop || $0 update
 		if [[ "$HOST_NODES" == "" ]]; then
@@ -152,6 +164,28 @@ case "$1" in
 			sleep 1
 		done
 		chmod +x $POLKADOT
+		;;
+	add-head-node)
+		if [ $# -lt 2 ]; then
+			echo "Usage: $0 add-head-node <multiaddr>"
+			exit
+		fi
+		if [[ "$HEAD_NODE_FILE" == "" ]]; then
+			echo "Cannot add head node when no head node file exists"
+			exit
+		fi
+		HEAD_NODES="$HEAD_NODES $2"
+		echo "$HEAD_NODES" > "$HEAD_NODE_FILE"
+		for N in $HEAD_NODES; do
+			if [[ "$(echo $HOST_NODES | grep $N)" == "" ]]; then
+				X=${N/\/ip4\//}
+				IP=${X/\/*/}
+				echo -n "Propagating to $IP..."
+				H=$(echo $HEAD_NODES | ssh -o StrictHostKeyChecking=no polkadot@$IP "cat > headnodes && hostname && /usr/bin/polkadot.sh restart > /dev/null")
+				echo "propagated to $H."
+			fi
+		done
+		$0 restart
 		;;
 	restart)
 		echo "Restarting..."
@@ -230,6 +264,7 @@ case "$1" in
 		echo "  restart"
 		echo "  update"
 		echo "  update-self"
+		echo "  add-head-node"
 		echo "  packdb"
 		echo "  key INDEX"
 		echo "  address INDEX"

@@ -1,0 +1,11 @@
+# The host which contains a database to be copied and the canonical head-nodes list.
+HEAD_HOST=headhost.my-domain.com
+
+# The pubkey of the Head Host.
+HEAD_HOST_PUBKEY="ssh-rsa SOME_KEY_HERE polkadot@$HEAD_HOST"
+
+# An associative variable declaring all stash accounts for each validator node,
+# indexed by the validator host name and the node index (starting at 1) on it.
+STASH[headhost_1]=12jknufHGEGregrojgeiogrei458rtoypoejg3mbeogreo5g
+STASH[headhost_2]=12ZXC1kNnpvUPgY4FA1AsKuUv9F613tQwgZshvaibw1z4AcD
+STASH[otherhost_1]=14JGqoxTtj7FGiuqWhh6nQjz4V16jXx4vBpwL5u9CZuByRgZ

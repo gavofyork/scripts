@@ -1,0 +1,9 @@
+INSTANCES=4
+NAME="My host name"
+HOST=my-host
+DOMAIN=my-domain.com
+RESERVED_ONLY=0
+TELEMETRY=ws://telemetry.my-domain.com:8000/submit
+VALIDATOR=1
+OPTIONS="--rpc-cors=all --unsafe-ws-external"
+DB=paritydb-experimental
