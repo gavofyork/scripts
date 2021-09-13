@@ -12,12 +12,36 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+# The number of Polkadot node instances to be deployed on this host.
 INSTANCES=4
+
+# The user-readable name of this host (this is used for telemetry).
 NAME="My host name"
+
+# The hostname of this host (this should be used for the DNS entry).
 HOST=my-host
+
+# The domain name of the network. The host should be reachable at $HOST.$DOMAIN.
 DOMAIN=my-domain.com
+
+# Whether to only connect to reserved nodes (this will result in a minimally connected network).
 RESERVED_ONLY=0
-TELEMETRY=ws://telemetry.my-domain.com:8000/submit
+
+# The telemetry server.
+TELEMETRY=ws://telemetry.polkadot.io:8000/submit
+
+# Whether your nodes should run as validators.
 VALIDATOR=1
+
+# If set, then opens RPC ports for this host to connect to nodes' RPC.
+#PANIC_HOST="panic.my-domain.com"
+
+# Any further options.
 OPTIONS="--rpc-cors=all --unsafe-ws-external"
+
+# The database to use.
 DB=paritydb-experimental
+
+# Whether to set up Prometheus and Grafana
+#USE_PROMETHEUS=1
+#USE_GRAFANA=1

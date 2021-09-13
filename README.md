@@ -15,14 +15,14 @@ $ cp node.config.example my-first-host.config
 $ vim my-first-host.config
 ```
 
-**NOTE**: All hosts in your network should share a DNS domain and have each have an `A` record with their host name;
+**NOTE**: All hosts in your network should share a DNS domain and have each have an `A` record with their host name.
 
 2. Deploy to a new machine:
 
 **NOTE**: THERE ARE REQUIREMENTS:
 
 - Machine must be a fresh Ubuntu 20.04 host;
-- the local running user must have password-less SSH root access to the machine (this may be rescinded after deployment if desired);
+- the local running user must have password-less SSH root access to the machine (this may be rescinded after deployment if desired).
 
 ```sh
 $ ./deploy.sh my-first-host.config `whoami`

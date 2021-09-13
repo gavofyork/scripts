@@ -52,7 +52,9 @@ echo "Setting up firewall..."
 ufw allow 22/tcp # SSH incoming
 for (( i = 0; i < $INSTANCES; i += 1 )); do
   ufw allow $((30333 + i))/tcp  # polkadot NET incoming
-  ufw allow from 95.216.77.209 to any port $((9944 + i))  # polkadot RPC incoming from panic
+  if [[ "$PANIC_HOST" != "" ]]; then
+    ufw allow from $PANIC_HOST to any port $((9944 + i))  # polkadot RPC incoming from panic
+  fi
 done
 ufw --force enable
 
