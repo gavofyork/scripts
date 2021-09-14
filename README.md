@@ -165,4 +165,4 @@ $ polka my-first-host screen
 - Remove requirement for DNS names
 - Singleton Prometheus/Grafana setup
 - Scripted setup for panic and telemetry
-- Make `polka deploy host.domain.com --instances 4` and `polka deploy --config host.config` work
+- Make `polka deploy host.domain.com --instances 4 --name Host` work
