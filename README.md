@@ -10,6 +10,7 @@ MAD. DON'T BLAME ME WHEN THEY GO WRONG OR DO SOMETHING YOU DON'T EXPECT.**
 These scripts form some pretty opinionated Polkadot node deployment tooling. They support:
 
 - running multiple nodes on a single host;
+- nodes running in a restart loop in case of unexpected halt;
 - setting up validators or non-validating full-nodes;
 - easy updating of the node software and scripts;
 - easy determining of keys and addresses of each node;
@@ -108,7 +109,7 @@ $ polka host my-first-host help
 ```
 
 I'll use this form for the other examples, but you can also SSH in and use the same commands if
-you wish. If you do that, then don't forget to drop the `host my-first-host` parameters.
+you wish. If you do that, then don't forget to drop the `host my-first-host` arguments.
 
 #### Examples:
 
