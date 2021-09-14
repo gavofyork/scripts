@@ -7,8 +7,7 @@ ALMOST CERTAINLY AT LEAST A BIT BUGGY. I'M PUTTING THEM OUT HERE IN THE INTEREST
 AND IDEAS, NOT FOR REAL-WORLD USAGE. IF YOU DO ANYTHING REMOTELY IMPORTANT WITH THEM THEN YOU'RE
 MAD. DON'T BLAME ME WHEN THEY GO WRONG OR DO SOMETHING YOU DON'T EXPECT.**
 
-These scripts were created to help me deploy and maintain a bunch of validator nodes and as such
-they're pretty opinionated. They support:
+These scripts form some pretty opinionated Polkadot node deployment tooling. They support:
 
 - running multiple nodes on a single host;
 - setting up validators or non-validating full-nodes;
@@ -89,6 +88,7 @@ $ polka deploy my-second-host.config `whoami`
 - `polka panic-config`: Generate configuration files for Polkadot PANIC.
 - `polka api-config`: Generate configuration files for Polkadot API Server.
 - `polka host HOSTNAME COMMAND`: Run `polka` command on a deployed host.
+
 ### Host/Node Maintenance
 
 Each host may be `ssh`ed into with the `polkadot` user and controlled individually with the
