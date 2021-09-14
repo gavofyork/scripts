@@ -137,6 +137,11 @@ Rotate and dump the validator keys for each node on `my-first-host`:
 $ polka host my-first-host keys
 ```
 
+Open a login on the host with `ssh` under the `polkadot` user:
+```sh
+$ polka host my-first-host
+```
+
 All nodes are running in a `screen` instance on the host. You can use `polka screen` to
 temporarily attach to this and view the node's logs in realtime. Use `Ctrl-A Ctrl-D` to exit the
 `screen` session without stopping/restarting the node. If there is more than one instance running,
@@ -144,6 +149,13 @@ then you should suffix with the instance number (1, 2, 3 &c).
 
 ```sh
 $ polka host my-first-host screen
+```
+
+The `host` part of the above commands is actually optional, so as long as your hosts are not
+called something which is a valid first parameter the `polka` script, then you can skip it. For example, the follow is equivalent to the previous command:
+
+```sh
+$ polka my-first-host screen
 ```
 
 ## Future work

@@ -32,6 +32,10 @@ hostname $HOST
 if [[ "$DOMAIN" != "" ]]; then
   domainname $DOMAIN
 fi
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.old
+sed '/^AcceptEnv LANG LC_/ s/./#&/' /etc/ssh/sshd_config.old | sed '/^PermitRootLogin without-password/ s/./#&/' >/etc/ssh/sshd_config
+sudo chmod 644 /etc/ssh/sshd_config
+service sshd restart
 
 if [[ ~polkadot == '~polkadot' ]] ; then
   echo "Adding users..."
@@ -105,7 +109,11 @@ chown -R polkadot ~polkadot
 cd ~polkadot
 
 echo "Starting node(s)..."
-su polkadot -c "polkadot.sh"
+su polkadot -c "polkadot.sh start"
 
-echo "NODE DEPLOYED"
-su polkadot -c "polkadot.sh address"
+echo "🎉 $INSTANCES node(s) deployed successfully!"
+echo
+echo "Addresses:"
+su polkadot -c "polkadot.sh addresses"
+echo "Keys:"
+su polkadot -c "polkadot.sh keys"
