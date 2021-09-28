@@ -175,3 +175,4 @@ polka my-first-host screen
 - Singleton Prometheus/Grafana setup
 - Scripted setup for panic and telemetry
 - Make `polka deploy host.domain.com --instances 4 --name Host` work
+- Set up weekly cron job to upgrade nodes
