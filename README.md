@@ -16,9 +16,9 @@ These scripts form some pretty opinionated Polkadot node deployment tooling. The
 - easy determining of keys and addresses of each node;
 - easy (re-)starting and stopping nodes;
 - avoiding all but one manual chain synchronization;
-- automatic interconnection of deployed nodes using a two-level star network and reserved peers,
-  where the first node on each host connects to all nodes on the same host as well as all first
-  nodes on all other hosts;
+- automatic interconnection of deployed nodes with a ring-and-star topology using reserved peers
+  (where the first node on each host connects to all nodes on the same host as well as all first
+  nodes on all other hosts);
 - optional set up of each host with Grafana and Prometheus;
 - configuration of a baseline firewall on each host;
 - running all node instances in a `screen` session for easily seeing what is happening on each;
@@ -33,37 +33,38 @@ records for each host.
 
 ## Usage
 
-0. Link the `polkadot.sh` file as the `polka` binary:
+1. Link the `polkadot.sh` file as the `polka` binary:
 
 ```sh
 sudo ln -s $PWD/polkadot.sh /usr/local/bin/polka
 ```
 
-NOTE: You don't need to do this, but if you don't then you should replace any usages of `polka` here with `./polkadot.sh`.
-
-
+NOTE: You don't need to do this, but if you don't then you should replace any usages of `polka`
+here with `./polkadot.sh`.
 
 1. Copy and edit your first host config file, which will become your head host:
 
 ```sh
-$ cp node.config.example my-first-host.config
-$ vim my-first-host.config
+cp node.config.example my-first-host.config
+vim my-first-host.config
 ```
 
 **NOTE THERE ARE REQUIREMENTS**:
 
-All hosts in your network must share a DNS domain and have each have an `A` record with their host name.
+All hosts in your network must share a DNS domain and have each have an `A` record with their host
+name.
 
-2. Deploy to a new machine:
+1. Deploy to a new machine:
 
 ```sh
-$ polka deploy my-first-host.config `whoami`
+polka deploy my-first-host.config `whoami`
 ```
 
 **NOTE THERE ARE REQUIREMENTS**:
 
 - Machine must be a fresh Ubuntu 20.04 host;
-- the local running user must have password-less SSH root access to the machine (this may be rescinded after deployment if desired).
+- the local running user must have password-less SSH root access to the machine (this may be
+  rescinded after deployment if desired).
 
 ## Maintenance
 
@@ -72,9 +73,9 @@ $ polka deploy my-first-host.config `whoami`
 More nodes may be configured and deployed at any time following:
 
 ```sh
-$ cp node.config.example my-second-host.config
-$ vim my-second-host.config
-$ polka deploy my-second-host.config `whoami`
+cp node.config.example my-second-host.config
+vim my-second-host.config
+polka deploy my-second-host.config `whoami`
 ```
 
 (There is no special process for decommissioning a host.)
@@ -105,42 +106,48 @@ rather it can also be done from the local machine with the local `polka` script,
 command. For example, the following is equivalent to the previous:
 
 ```sh
-$ polka host my-first-host help
+polka host my-first-host help
 ```
 
 I'll use this form for the other examples, but you can also SSH in and use the same commands if
 you wish. If you do that, then don't forget to drop the `host my-first-host` arguments.
 
-#### Examples:
+#### Examples
 
 Start (or restart) all Polkadot nodes on `my-first-host`:
+
 ```sh
-$ polka host my-first-host start
+polka host my-first-host start
 ```
 
 Stop all Polkadot nodes on `my-first-host`:
+
 ```sh
-$ polka host my-first-host stop
+polka host my-first-host stop
 ```
 
 Update Polkadot binary to latest release and restart all nodes on `my-first-host`:
+
 ```sh
-$ polka host my-first-host update
+polka host my-first-host update
 ```
 
 List the network addresses for each node on `my-first-host`:
+
 ```sh
-$ polka host my-first-host addresses
+polka host my-first-host addresses
 ```
 
 Rotate and dump the validator keys for each node on `my-first-host`:
+
 ```sh
-$ polka host my-first-host keys
+polka host my-first-host keys
 ```
 
 Open a login on the host with `ssh` under the `polkadot` user:
+
 ```sh
-$ polka host my-first-host
+polka host my-first-host
 ```
 
 All nodes are running in a `screen` instance on the host. You can use `polka screen` to
@@ -149,20 +156,21 @@ temporarily attach to this and view the node's logs in realtime. Use `Ctrl-A Ctr
 then you should suffix with the instance number (1, 2, 3 &c).
 
 ```sh
-$ polka host my-first-host screen
+polka host my-first-host screen
 ```
 
 The `host` part of the above commands is actually optional, so as long as your hosts are not
-called something which is a valid first parameter the `polka` script, then you can skip it. For example, the follow is equivalent to the previous command:
+called something which is a valid first parameter the `polka` script, then you can skip it. For
+example, the follow is equivalent to the previous command:
 
 ```sh
-$ polka my-first-host screen
+polka my-first-host screen
 ```
 
 ## Future work
 
-- Initialization of head host should wait for sync then packdb
-- packdb should run nightly
+- Initialization of head host should wait for sync then `packdb`
+- `packdb` should run nightly
 - Remove requirement for DNS names
 - Singleton Prometheus/Grafana setup
 - Scripted setup for panic and telemetry

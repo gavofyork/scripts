@@ -59,12 +59,21 @@ case "$1" in
 		wait
 		;;
 	update-binary)
+		HOSTNAMES=""
 		for IP in $(node_ips); do
 			HOSTNAME="$(hostname $IP)"
+			HOSTNAMES="$HOSTNAMES $HOSTNAME"
 			echo "Updating $HOSTNAME..."
-			ssh $IP "/usr/bin/polkadot.sh update > /dev/null" < ./polkadot.sh &
+			ssh polkadot@$IP "/usr/bin/polkadot.sh update" > /tmp/$HOSTNAME.output &
 		done
 		wait
+		for HOSTNAME in $HOSTNAMES; do
+			if [ `grep "No new release" /tmp/$HOSTNAME.output | wc -l` -eq 1 ]; then
+				echo "$HOSTNAME: Up-to-date"
+			else
+				echo "$HOSTNAME: Upgraded"
+			fi
+		done
 		;;
 	api-config)
 		I=1
