@@ -361,16 +361,18 @@ case "$1" in
 	*)
 		echo "Usage: $0 [COMMAND] [OPTIONS]"
 		echo "Commands:"
-		echo "  start"
-		echo "  stop"
-		echo "  restart"
+		echo "  start ( NODE_INSTANCE COUNT ? ) ?"
+		echo "  stop ( NODE_INSTANCE COUNT ? ) ?"
+		echo "  cycle ( NODE_INSTANCE COUNT ? ) ?"
+		echo "  stop-all"
+		echo "  cycle-all"
 		echo "  update"
 		echo "  update-script"
 		echo "  add-head-node"
 		echo "  packdb"
 		echo "  key INDEX"
 		echo "  address INDEX"
-		echo "  keys ( START_INDEX COUNT ? ) ?"
-		echo "  addresses ( START_INDEX COUNT ? ) ?"
+		echo "  keys ( NODE_INSTANCE COUNT ? ) ?"
+		echo "  addresses ( NODE_INSTANCE COUNT ? ) ?"
 		;;
 esac
