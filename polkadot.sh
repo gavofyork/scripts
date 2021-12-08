@@ -75,6 +75,38 @@ case "$1" in
 			fi
 		done
 		;;
+	update-security)
+		VERSION=$(grep VERSION= host-polkadot.sh)
+		echo Ensuring OS is secure...
+		CMD="sudo unattended-upgrade -v; \
+		if [[ -e /var/run/reboot-required ]] ; then \
+			echo Rebooting... ; \
+			cd ~polkadot ; \
+			sudo su polkadot -c 'polka stop-all' ; \
+			sudo reboot ; \
+		fi"
+		HOSTNAMES=""
+		if [ $# -ge 2 ]; then
+			for HOSTNAME in "${@:2}"; do
+				echo "Securing $HOSTNAME..."
+				ssh $HOSTNAME.$DOMAIN "$CMD" > /tmp/$HOSTNAME.output 2> /dev/null &
+				HOSTNAMES="$HOSTNAMES $HOSTNAME"
+			done
+		else
+			for IP in $(node_ips); do
+				HOSTNAME="$(hostname $IP)"
+				echo "Securing $HOSTNAME..."
+				ssh $IP "$CMD" > /tmp/$HOSTNAME.output 2> /dev/null &
+				HOSTNAMES="$HOSTNAMES $HOSTNAME"
+			done
+		fi
+		wait
+		for HOSTNAME in $HOSTNAMES; do
+			echo
+			echo "$HOSTNAME:"
+			cat /tmp/$HOSTNAME.output | grep '^Packages\|^All \|^Writing dpkg\|^No packages\|^Rebooting\|log for details\|^ [a-z]\|^Errors were\|^upgrades failed'
+		done
+		;;
 	api-config)
 		I=1
 		for IP in $(node_ips); do
@@ -121,9 +153,33 @@ case "$1" in
 			exit 1
 		fi
 
-		source $2
+		NEW_CONFIG=`mktemp /tmp/polkadot.config-XXXXXXXX`
 
-		if [[ $HAVE_NETWORK_CONFIG ]]; then
+		cp $2 $NEW_CONFIG
+		SKIP_DB=""
+		for arg in "${@:4}"; do
+			case $arg in
+				-n=*|--name=*)
+					echo "NAME=\"${arg#*=}\"" >> $NEW_CONFIG
+				;;
+    				-h=*|--host=*)
+					echo "HOST=\"${arg#*=}\"" >> $NEW_CONFIG
+				;;
+				-i=*|--instances=*)
+					echo "INSTANCES=\"${arg#*=}\"" >> $NEW_CONFIG
+				;;
+				-s|--skip-db)
+					SKIP_DB=1
+				;;
+				*)
+					echo "Unknown option: $arg"
+					exit -1
+				;;
+			esac
+		done
+		source $NEW_CONFIG
+
+		if [[ $HAVE_NETWORK_CONFIG && ! $SKIP_DB ]]; then
 			echo "Copying database..."
 			ssh -o StrictHostKeyChecking=no root@$HOST.$DOMAIN "echo $HEAD_HOST_PUBKEY >> .ssh/authorized_keys" > /dev/null 2> /dev/null
 			ssh polkadot@$HEAD_HOST scp -o StrictHostKeyChecking=no /home/polkadot/nodes/db.tgz /home/polkadot/net.config root@$HOST.$DOMAIN: > /dev/null 2> /dev/null
@@ -132,10 +188,11 @@ case "$1" in
 		echo "Copying setup script and config..."
 		scp host-polkadot.sh setup.sh root@$HOST.$DOMAIN:
 		ssh root@$HOST.$DOMAIN chmod +x setup.sh
-		scp $2 root@$HOST.$DOMAIN:polkadot.config
+		scp $NEW_CONFIG root@$HOST.$DOMAIN:polkadot.config
+		rm -f $NEW_CONFIG
 
 		echo "Setting up..."
-		ssh root@$HOST.$DOMAIN "./setup.sh polkadot.config $3" > tee /tmp/output
+		ssh root@$HOST.$DOMAIN "./setup.sh polkadot.config $3" | tee /tmp/output
 
 		if [[ $HAVE_NETWORK_CONFIG ]]; then
 			echo "Adding new head-node..."

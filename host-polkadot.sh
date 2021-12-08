@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-VERSION=0.4.21
+VERSION=0.4.25
 
 count() {
 	printf $#
@@ -26,7 +26,7 @@ trim() {
 }
 
 # Set up defaults.
-DB="paritydb"
+DB="auto"
 WASM_EXECUTION="compiled"
 PRUNING=16384
 IN_PEERS=25
@@ -258,6 +258,20 @@ case "$1" in
 			echo "Cannot add head node when no head node file exists"
 			exit
 		fi
+
+		lockfile='.headnodes.lock'
+		while [[ 1 ]] ; do
+			if (set -o noclobber; echo "$$" > "$lockfile") 2> /dev/null; then
+				# This will cause the lock-file to be deleted in case of a
+				# premature exit.
+				trap 'rm -f "$lockfile"; exit $?' INT TERM EXIT
+				break
+			fi
+			sleep 0.5
+		done
+
+		# Ensure that we're at the latest version.
+		source ./polkadot.config
 		HEAD_NODES="$HEAD_NODES $2"
 		echo "$HEAD_NODES" > "$HEAD_NODE_FILE"
 		for N in $HEAD_NODES; do
@@ -270,6 +284,9 @@ case "$1" in
 			fi
 		done
 		$0 restart
+
+		rm -f "$lockfile"
+		trap - INT TERM EXIT
 		;;
 	address | addresses)
 		BEGIN=0
@@ -313,14 +330,26 @@ case "$1" in
 		done
 		;;
 	update | upgrade)
-		mv -f $POLKADOT /tmp/polkadot.old 2> /dev/null
 		echo -n "Checking for new release..."
-		wget -q https://github.com/paritytech/polkadot/releases/latest/download/polkadot -O $POLKADOT
-		chmod +x $POLKADOT
-		if ! cmp -s -- $POLKADOT /tmp/polkadot.old ; then
+		wget -q https://github.com/paritytech/polkadot/releases/latest/download/polkadot -O "$POLKADOT-new"
+		if [ ! -s "$POLKADOT-new" ]; then
+			# Known-working link:
+			echo "Falling back on 0.9.12 release..."
+			wget -q https://github.com/paritytech/polkadot/releases/download/v0.9.12/polkadot -O "$POLKADOT-new"
+		fi
+		if [ ! -s "$POLKADOT-new" ]; then
+			echo "No release found. Aborting."
+			rm -f "$POLKADOT-new"
+			exit 0
+		fi
+		if ! cmp -s -- $POLKADOT "$POLKADOT-new" ; then
 			echo "Upgrading..."
+			mv -f $POLKADOT /tmp/polkadot.old 2> /dev/null
+			mv -f "$POLKADOT-new" "$POLKADOT"
+			chmod +x $POLKADOT
 			$0 restart
 		else
+			rm -f "$POLKADOT-new"
 			echo "No new release."
 		fi
 		;;
@@ -330,13 +359,14 @@ case "$1" in
 		sudo mv polkadot.sh /usr/bin
 		;;
 	pack-db | packdb)
-		$0 stop
+		$0 stop 1
 		cd $BASE/nodes
 		mv instance-1/chains/polkadot/network instance-1/chains/polkadot/keystore .
+		echo "Packing..."
 		tar czf db.tgz instance-1
 		mv network keystore instance-1/chains/polkadot
 		cd ..
-		$0 start
+		$0 start 1
 		;;
 	screen)
 		if [[ "$2" == "" ]]; then

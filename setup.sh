@@ -48,9 +48,12 @@ if [[ ~polkadot == '~polkadot' ]] ; then
   echo "$USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USER-user
 fi
 
-echo "Installing screen, wget, ufw..."
+echo "Installing screen, wget, ufw, unattended-upgrades..."
 apt-get update > /dev/null 2> /dev/null
-apt-get install -y screen wget ufw > /dev/null 2> /dev/null
+apt-get install -y screen wget ufw unattended-upgrades > /dev/null 2> /dev/null
+
+echo "Ensuring secure..."
+unattended-upgrade -v
 
 echo "Setting up firewall..."
 ufw allow 22/tcp # SSH incoming
@@ -86,6 +89,28 @@ echo "Installing script..."
 chmod +x host-polkadot.sh
 mv host-polkadot.sh /usr/bin/polkadot.sh
 ln -s /usr/bin/polkadot.sh /usr/bin/polka
+
+echo "Ensuring activation on startup..."
+cat > start-polkadot < EOF
+#!/bin/bash
+cd ~polkadot
+su polkadot -c "polka start"
+EOF
+chmod +x start-polkadot
+chown polkadot start-polkadot
+cat <<EOF > /etc/systemd/system/polkadot.service
+[Unit]
+After=network.service
+
+[Service]
+ExecStart=/home/polkadot/start-polkadot
+
+[Install]
+WantedBy=default.target
+EOF
+sudo chmod 664 /etc/systemd/system/polkadot.service
+systemctl daemon-reload
+systemctl enable polkadot.service
 
 if [[ ! -e nodes ]]; then mkdir nodes; fi
 if [[ -e db.tgz ]]; then
