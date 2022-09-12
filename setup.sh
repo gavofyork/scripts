@@ -28,6 +28,7 @@ USER=$2
 source "$CONFIG"
 
 echo "Setting up host..."
+echo $HOST > /etc/hostname
 hostname $HOST
 if [[ "$DOMAIN" != "" ]]; then
   domainname $DOMAIN
@@ -104,13 +105,14 @@ chown polkadot:polkadot /usr/bin/polkadot.sh
 ln -s /usr/bin/polkadot.sh /usr/bin/polka
 
 echo "Ensuring activation on startup..."
-cat > start-polkadot < EOF
+cat <<EOF > start-polkadot
 #!/bin/bash
 cd ~polkadot
 su polkadot -c "polka start"
 EOF
 chmod +x start-polkadot
 chown polkadot:polkadot start-polkadot
+mv start-polkadot ~polkadot
 cat <<EOF > /etc/systemd/system/polkadot.service
 [Unit]
 After=network.service

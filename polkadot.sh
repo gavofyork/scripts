@@ -174,19 +174,28 @@ case "$1" in
 		fi
 
 		NEW_CONFIG=`mktemp /tmp/polkadot.config-XXXXXXXX`
+		echo "Using config file $NEW_CONFIG"
 
 		cp $2 $NEW_CONFIG
+		# A newline.
+		echo >> $NEW_CONFIG
 		SKIP_DB=""
 		for arg in "${@:4}"; do
 			case $arg in
 				-n=*|--name=*)
-					echo "NAME=\"${arg#*=}\"" >> $NEW_CONFIG
+					NAME="${arg#*=}"
+					echo "Name is <<$NAME>>"
+					echo "NAME=\"$NAME\"" >> $NEW_CONFIG
 				;;
     				-h=*|--host=*)
-					echo "HOST=\"${arg#*=}\"" >> $NEW_CONFIG
+					HOST="${arg#*=}"
+					echo "Host is <<$HOST>>"
+					echo "HOST=\"$HOST\"" >> $NEW_CONFIG
 				;;
 				-i=*|--instances=*)
-					echo "INSTANCES=\"${arg#*=}\"" >> $NEW_CONFIG
+					INSTANCES="${arg#*=}"
+					echo "Instances: <<$INSTANCES>>"
+					echo "INSTANCES=\"$INSTANCES\"" >> $NEW_CONFIG
 				;;
 				-s|--skip-db)
 					SKIP_DB=1
@@ -217,7 +226,10 @@ case "$1" in
 		rm -f $NEW_CONFIG
 
 		echo "Setting up..."
-		ssh root@$HOST.$DOMAIN "./setup.sh polkadot.config $3" | tee /tmp/output
+		OUTPUT=`mktemp /tmp/polkadot.output-XXXXXXXX`
+		ssh root@$HOST.$DOMAIN "./setup.sh polkadot.config $3" | tee $OUTPUT
+
+		tail -n $INSTANCES $OUTPUT | cut -d ' ' -f 2 > $HOST.keys
 
 		if [[ $HAVE_NETWORK_CONFIG ]]; then
 			echo "Adding new head-node..."
