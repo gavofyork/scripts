@@ -13,7 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-VERSION=0.4.26
+VERSION=0.4.27
 
 count() {
 	printf $#
@@ -97,11 +97,14 @@ case "$1" in
 			MODE=""
 		fi
 
-		for N in $HEAD_NODES; do
-			if [[ "$(echo $HOST_NODES | grep $N)" == "" ]]; then
-				RESERVED="$RESERVED $N"
-			fi
-		done
+		# Only the head node instance connects to the other head nodes.
+		if [[ "$INSTANCE" == "1" ]]; then
+			for N in $HEAD_NODES; do
+				if [[ "$(echo $HOST_NODES | grep $N)" == "" ]]; then
+					RESERVED="$RESERVED $N"
+				fi
+			done
+		fi
 
 		echo "$HOST: $FULLNAME"
 		echo "MODE: $MODE"
