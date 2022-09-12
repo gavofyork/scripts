@@ -32,7 +32,7 @@ declare -A HOST_CACHE
 function hostname {
 	local IP=$1
 	if [[ "${HOST_CACHE[$IP]}" == "" ]]; then
-		HOSTNAME=$(ssh $IP hostname)
+		HOSTNAME=$(ssh -o StrictHostKeyChecking=no polkadot@$IP hostname)
 		HOST_CACHE[$IP]=$HOSTNAME
 		echo "HOST_CACHE["$IP"]=$HOSTNAME" >> $HOST_CACHE_FILE
 	fi
@@ -51,12 +51,22 @@ case "$1" in
 	update-script)
 		VERSION=$(grep VERSION= host-polkadot.sh)
 		echo Updating polkadot.sh to version ${VERSION/VERSION=/}...
+		OUTPUT=`mktemp /tmp/polkadot.output-XXXXXXXX`
+		HOSTNAMES=""
 		for IP in $(node_ips); do
 			HOSTNAME="$(hostname $IP)"
+			HOSTNAMES="$HOSTNAMES $HOSTNAME"
 			echo "Installing on $HOSTNAME..."
-			ssh $IP "cat > /tmp/polkadot.sh && chmod +x /tmp/polkadot.sh && sudo chown polkadot /tmp/polkadot.sh && sudo mv /tmp/polkadot.sh /usr/bin" < ./host-polkadot.sh &
+			ssh polkadot@$HOSTNAME.$DOMAIN "cat > /usr/bin/polkadot.sh" < ./host-polkadot.sh > $OUTPUT.$HOSTNAME &
 		done
 		wait
+		for HOSTNAME in $HOSTNAMES; do
+			if [[ `cat $OUTPUT.$HOSTNAME | wc -l` -gt 0 ]]; then
+				echo
+				echo "$HOSTNAME:"
+				cat $OUTPUT.$HOSTNAME
+			fi
+		done
 		;;
 	update-binary)
 		HOSTNAMES=""
@@ -64,7 +74,7 @@ case "$1" in
 			HOSTNAME="$(hostname $IP)"
 			HOSTNAMES="$HOSTNAMES $HOSTNAME"
 			echo "Updating $HOSTNAME..."
-			ssh polkadot@$IP "/usr/bin/polkadot.sh update" > /tmp/$HOSTNAME.output &
+			ssh polkadot@$HOSTNAME.$DOMAIN "/usr/bin/polkadot.sh update" > /tmp/$HOSTNAME.output &
 		done
 		wait
 		for HOSTNAME in $HOSTNAMES; do
@@ -73,6 +83,12 @@ case "$1" in
 			else
 				echo "$HOSTNAME: Upgraded"
 			fi
+		done
+		;;
+	list-nodes)
+		for IP in $(node_ips); do
+			HOSTNAME="$(hostname $IP)"
+			echo "$HOSTNAME: $IP"
 		done
 		;;
 	update-security)
@@ -96,7 +112,7 @@ case "$1" in
 			for IP in $(node_ips); do
 				HOSTNAME="$(hostname $IP)"
 				echo "Securing $HOSTNAME..."
-				ssh $IP "$CMD" > /tmp/$HOSTNAME.output 2> /dev/null &
+				ssh $HOSTNAME.$DOMAIN "$CMD" > /tmp/$HOSTNAME.output 2> /dev/null &
 				HOSTNAMES="$HOSTNAMES $HOSTNAME"
 			done
 		fi
@@ -153,6 +169,10 @@ case "$1" in
 			exit 1
 		fi
 
+		if [[ "$POLKADOT_PUBKEY" == "" || "$ADMIN_PUBKEY" == "" ]]; then
+			echo "Ensure POLKADOT_PUBKEY and ADMIN_PUBKEY are set properly in node config."
+		fi
+
 		NEW_CONFIG=`mktemp /tmp/polkadot.config-XXXXXXXX`
 
 		cp $2 $NEW_CONFIG
@@ -187,7 +207,12 @@ case "$1" in
 
 		echo "Copying setup script and config..."
 		scp host-polkadot.sh setup.sh root@$HOST.$DOMAIN:
-		ssh root@$HOST.$DOMAIN chmod +x setup.sh
+		ssh root@$HOST.$DOMAIN "\
+			chmod +x setup.sh ; \
+			echo $HEAD_HOST_PUBKEY > id_head.pub ; \
+			echo $POLKADOT_PUBKEY > id_polkadot.pub ; \
+			echo $ADMIN_PUBKEY > id_admin.pub ; \
+		"
 		scp $NEW_CONFIG root@$HOST.$DOMAIN:polkadot.config
 		rm -f $NEW_CONFIG
 

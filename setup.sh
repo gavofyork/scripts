@@ -38,13 +38,25 @@ sudo chmod 644 /etc/ssh/sshd_config
 service sshd restart
 
 if [[ ~polkadot == '~polkadot' ]] ; then
-  echo "Adding users..."
+  echo "Adding user `polkadot`..."
   useradd -s /bin/bash -m polkadot
-  cp -r ~/.ssh ~polkadot
-  chown -R polkadot ~polkadot
+  mkdir ~polkadot/.ssh
+  mv ~/id_polkadot.pub ~polkadot/.ssh/authorized_keys
+  echo >> ~polkadot/.ssh/authorized_keys
+  cat ~/id_head.pub >> ~polkadot/.ssh/authorized_keys
+  rm -f ~/id_head.pub
+  chmod 700 ~polkadot/.ssh
+  chmod 644 ~polkadot/.ssh/authorized_keys
+  chown -R polkadot:polkadot ~polkadot
+fi
+if [[ ! -e /home/$USER ]] ; then
+  echo "Adding sudo user `$USER`..."
   useradd -s /bin/bash -m $USER
-  cp -r ~/.ssh /home/$USER
-  chown -R $USER /home/$USER
+  mkdir /home/$USER/.ssh
+  mv ~/id_admin.pub /home/$USER/.ssh/authorized_keys
+  chmod 700 /home/$USER/.ssh
+  chmod 644 /home/$USER/.ssh/authorized_keys
+  chown -R $USER:$USER /home/$USER
   echo "$USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USER-user
 fi
 
@@ -52,7 +64,7 @@ echo "Installing screen, wget, ufw, unattended-upgrades..."
 apt-get update > /dev/null 2> /dev/null
 apt-get install -y screen wget ufw unattended-upgrades > /dev/null 2> /dev/null
 
-echo "Ensuring secure..."
+echo "Ensuring up to date..."
 unattended-upgrade -v
 
 echo "Setting up firewall..."
@@ -88,6 +100,7 @@ fi
 echo "Installing script..."
 chmod +x host-polkadot.sh
 mv host-polkadot.sh /usr/bin/polkadot.sh
+chown polkadot:polkadot /usr/bin/polkadot.sh
 ln -s /usr/bin/polkadot.sh /usr/bin/polka
 
 echo "Ensuring activation on startup..."
@@ -97,7 +110,7 @@ cd ~polkadot
 su polkadot -c "polka start"
 EOF
 chmod +x start-polkadot
-chown polkadot start-polkadot
+chown polkadot:polkadot start-polkadot
 cat <<EOF > /etc/systemd/system/polkadot.service
 [Unit]
 After=network.service

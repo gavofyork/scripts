@@ -13,16 +13,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-VERSION=0.4.25
+VERSION=0.4.26
 
 count() {
 	printf $#
 }
 trim() {
-    local var="$*"
-    var="${var#"${var%%[![:space:]]*}"}"
-    var="${var%"${var##*[![:space:]]}"}"
-    printf '%s' "$var"
+	local var="$*"
+	var="${var#"${var%%[![:space:]]*}"}"
+	var="${var%"${var##*[![:space:]]}"}"
+	printf '%s' "$var"
 }
 
 # Set up defaults.
@@ -125,15 +125,27 @@ case "$1" in
 		fi
 
 		if [[ "$LOCAL_NODES$RESERVED$SENTRY_NODE" != "" ]]; then
-			RESERVED_NODES="--reserved-nodes $LOCAL_NODES $RESERVED $SENTRY_NODE"
+				RESERVED_NODES=""
+				for n in $LOCAL_NODES $RESERVED $SENTRY_NODE; do
+						RESERVED_NODES="$RESERVED_NODES --reserved-nodes $n"
+				done
 		fi
 
 		DB_PATH="$BASE/nodes/instance-$INSTANCE"
 
 		if [[ "$TELEMETRY" != "" ]]; then
-			TELEMETRY_OPT="--telemetry-url"
-			TELEMETRY_ARG="$TELEMETRY 0"
+				TELEMETRY_OPT="--telemetry-url"
+				TELEMETRY_ARG="$TELEMETRY 0"
 		fi
+
+		echo Running $POLKADOT $MODE $OPTIONS $TELEMETRY_OPT "$TELEMETRY_ARG" \
+				-d $DB_PATH \
+				--name "$FULLNAME" \
+				$RESERVED_NODES \
+				--port $((30332 + INSTANCE)) \
+				--prometheus-port $((9614 + INSTANCE)) \
+				--ws-port $((9943 + INSTANCE)) \
+				--rpc-port $((9934 - INSTANCE))
 
 		$POLKADOT $MODE $OPTIONS $TELEMETRY_OPT "$TELEMETRY_ARG" \
 			-d $DB_PATH \

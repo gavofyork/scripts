@@ -9,6 +9,15 @@ HOST=my-host
 # The domain name of the network. The host should be reachable at $HOST.$DOMAIN.
 DOMAIN=my-domain.com
 
+# The SSH public key authorized to log in to the polkadot account and able to conduct most
+# maintenance tasks. This does not have sudo access.
+#POLKADOT_PUBKEY="ssh-rsa ..."
+
+# The SSH public key authorized to log in to the administrative user's account and able to gain
+# root access through sudo. This is only needed for OS-level maintenance tasks including installing
+# security updates.
+#ADMIN_PUBKEY="ssh-rsa ..."
+
 # If set, then the number of Polkadot node instances to be deployed on this host. If
 # left unset, then there will be just one instance on the host.
 #INSTANCES=4
